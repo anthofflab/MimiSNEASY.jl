@@ -73,24 +73,8 @@
 #!==============================================================================
 module doeclim
 
-type doeclimparam
-  const ak   = 0.31d0
-  const bk   = 1.59d0
-  const bsi  = 1.3d0
-  const cal  = 0.52d0
-  const cas  = 7.80d0
-  const csw  = 0.13d0
-  const flnd = 0.29d0
-  const fso  = 0.95d0
-  const kcon = 3155.8d0
-  const q2co = 3.7d0
-  const rlam = 1.43d0
-  const zbot = 4000d0
-  const earth_area = 5100656.D8      # [m^2]
-  const secs_per_Year = 31556926d0
-end
-
 type doeclimvar
+  nsteps
   temp_landair::Vector{Float64}
   temp_sst::Vector{Float64}
   heat_mixed::Vector{Float64}
@@ -110,6 +94,7 @@ type doeclimvar
 
   function doeclimvar(timesteps)
     vars = new(
+      timesteps,
       Array(Float64,timesteps),
       Array(Float64,timesteps),
       Array(Float64,timesteps),
@@ -127,6 +112,7 @@ type doeclimvar
       0,
       0)
     return vars
+  end
 end
 
 function init_doeclim_arrays(doeclimvars)
@@ -144,7 +130,7 @@ function init_doeclim_arrays(doeclimvars)
   doeclimvars.heatflux_interior[:] = 0.0
 end
 
-function init_doeclim_parameters(doeclimvars, t2co, kappa)
+function init_doeclim_parameters(doeclimvars, deltat, t2co, kappa)
 #  =========================================================================
 # |  Initialize variables for DOECLIM.                                      |
 # |                                                                         |
@@ -154,521 +140,309 @@ function init_doeclim_parameters(doeclimvars, t2co, kappa)
 # |     nsteps: number of steps (length of forcing and response vectors)    |
 # |                                                                         |
 #  =========================================================================
-    real(DP), intent(IN)  :: t2co, kappa
-    real(DP) :: cfl, cfs, kls  !, tmean
-    real(DP), dimension(nsteps) :: KT0,KTA1,KTB1,KTA2,KTB2,KTA3,KTB3
-!    real(DP) :: KTB3(1:nsteps)
-    real(DP) :: ocean_area, keff, cnum, cden
-    real(DP), dimension(2,2) :: IBaux, Baux, Cdoe
-    integer(i4b) :: i,j
+	const ak   = 0.31
+	const bk   = 1.59
+	const bsi  = 1.3
+	const cal  = 0.52
+	const cas  = 7.80
+	const csw  = 0.13
+	const flnd = 0.29
+	const fso  = 0.95
+	const kcon = 3155.8
+	const q2co = 3.7
+	const rlam = 1.43
+	const zbot = 4000
+	const earth_area = 5100656e8      # [m^2]
+	const secs_per_Year = 31556926
 
-! DEPENDENT MODEL PARAMETERS
-      ocean_area = (1.-flnd)*earth_area
-!      print *,'e area',earth_area
-      powtoheat = ocean_area*secs_per_Year / 1.D22
+	nsteps = doeclimvars.nsteps
+	KT0 = Array(Float64,nsteps)
+	KTA1 = Array(Float64,nsteps)
+	KTB1 = Array(Float64,nsteps)
+	KTA2 = Array(Float64,nsteps)
+	KTB2 = Array(Float64,nsteps)
+	KTA3 = Array(Float64,nsteps)
+	KTB3 = Array(Float64,nsteps)
 
-      cnum= rlam*flnd + bsi * (1.-flnd)
+	Cdoe = Array(Float64, 2, 2)
+	Baux = Array(Float64, 2, 2)
 
-      cden = rlam * flnd - ak *(rlam-bsi)
+#    real(DP) :: cden
 
+	# DEPENDENT MODEL PARAMETERS
+	ocean_area = (1.0-flnd)*earth_area
 
-!!!!! vertical diffusivity in [m^2/a]
+	doeclimvars.powtoheat = ocean_area*secs_per_Year / 1e22
 
-      keff   = kcon * kappa
+	cnum = rlam*flnd + bsi * (1.0-flnd)
 
-!!!!! climate feedback strength over land
+	cden = rlam * flnd - ak *(rlam-bsi)
 
-      cfl = flnd *cnum/cden*q2co/t2co-bk*(rlam-bsi)/cden
 
-!!!!! climate feedback strength over ocean
+	# vertical diffusivity in [m^2/a]
 
-      cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi))                  &
-      * cnum / cden * q2co / t2co + rlam * flnd / (1.-flnd) * bk *       &
-      (rlam - bsi) / cden
+    keff = kcon * kappa
 
-!!!!! land-sea heat exchange coefficient
+	# climate feedback strength over land
 
-      kls = bk * rlam * flnd / cden - ak * flnd * cnum                  &
-      / cden * q2co / t2co
+    cfl = flnd *cnum/cden*q2co/t2co-bk*(rlam-bsi)/cden
 
-!!!!! interior ocean warming time scale
+	# climate feedback strength over ocean
 
-      taubot = zbot**2 / keff
+    cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi)) * cnum / cden * q2co / t2co + rlam * flnd / (1.-flnd) * bk * (rlam - bsi) / cden
 
-!!!!! ocean heat diff. time scale
+	# land-sea heat exchange coefficient
 
-      taudif = cas**2 / csw**2 * Pi / keff
+    kls = bk * rlam * flnd / cden - ak * flnd * cnum / cden * q2co / t2co
 
-!!!!! ocean response time scale
+	# interior ocean warming time scale
 
-      taucfs = cas / cfs
+    doeclimvars.taubot = zbot^2 / keff
 
-!!!!! land response time scale
+	# ocean heat diff. time scale
 
-      taucfl = cal / cfl
+    doeclimvars.taudif = cas^2 / csw^2 * pi / keff
 
-!!!!! sea-land heat exchange time scale
+	# ocean response time scale
 
-      tauksl  = (1.-flnd) * cas / kls
+    doeclimvars.taucfs = cas / cfs
 
-!!!!! land-sea heat exchange time scale
+	# land response time scale
 
-      taukls  = flnd * cal / kls
+    doeclimvars.taucfl = cal / cfl
 
+	# sea-land heat exchange time scale
 
-!      enddo
-!   Zeroth Order
+    doeclimvars.tauksl  = (1.-flnd) * cas / kls
 
-      KT0(nsteps) = 4d0-2d0*SQRT(2.)
+	# land-sea heat exchange time scale
 
-!   First Order
+    doeclimvars.taukls  = flnd * cal / kls
 
-      KTA1(nsteps) = -8d0*exp(-taubot/deltat) + &
-                    4d0*sqrt(2.)*exp(-0.5d0*taubot/deltat)
 
-      KTB1(nsteps) = 4d0*sqrt(Pi*taubot/deltat) * &
-            (1d0+erf(sqrt(0.5d0*taubot/deltat)) - 2d0*erf(sqrt(taubot/deltat)))
+	# Zeroth Order
 
-!   Second order
+    KT0[nsteps] = 4-2*sqrt(2.)
 
-      KTA2(nsteps) =  8d0*exp(-4.*taubot/deltat) - &
-                4d0*sqrt(2.)*exp(-2.*taubot/deltat)
+	# First Order
 
-      KTB2(nsteps) = -8d0*sqrt(Pi*taubot/deltat) *  &
-            (1.+ erf(sqrt(2.*taubot/deltat)) - 2.*erf(2.*sqrt(taubot/deltat)) )
+    KTA1[nsteps] = -8*exp(-doeclimvars.taubot/deltat) + 4*sqrt(2.)*exp(-0.5*doeclimvars.taubot/deltat)
 
-!    Third Order
+    KTB1[nsteps] = 4*sqrt(pi*doeclimvars.taubot/deltat) * (1+erf(sqrt(0.5*doeclimvars.taubot/deltat)) - 2*erf(sqrt(doeclimvars.taubot/deltat)))
 
-      KTA3(nsteps) = -8.*exp(-9.*taubot/deltat) + &
-            4d0*sqrt(2.)*exp(-4.5*taubot/deltat)
+	# Second order
 
-      KTB3(nsteps) = 12.*sqrt(Pi*taubot/deltat) * &
-          (1d0 +erf(sqrt(4.5*taubot/deltat)) - 2.*erf(3.*sqrt(taubot/deltat)) )
+    KTA2[nsteps] =  8*exp(-4.*doeclimvars.taubot/deltat) - 4*sqrt(2.)*exp(-2.*doeclimvars.taubot/deltat)
 
-!%Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
-!%Switched on (To switch off, comment out lines below)
-!     do i=1,N_samples_lambda_star
-      Cdoe(1,1) = 1./taucfl**2+1./taukls**2                      &
-          +2./taucfl/taukls+bsi/taukls/tauksl
-      Cdoe(1,2) = -bsi/taukls**2-bsi/taucfl/taukls            &
-      -bsi/taucfs/taukls-bsi**2/taukls/tauksl
-      Cdoe(2,1) = -bsi/tauksl**2-1./taucfs/tauksl             &
-       -1./taucfl/tauksl-1./taukls/tauksl
-      Cdoe(2,2) =  1./taucfs**2+bsi**2/tauksl**2                &
-       +2.*bsi/taucfs/tauksl+bsi/taukls/tauksl
-      Cdoe=Cdoe*(deltat**2/12.)
-
-!%------------------------------------------------------------------
-!% Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
-!% T = (TL,TO)
-!% (Equation A.27, EK05, or Equations 2.3.24 and 2.3.27, TK07)
-      Baux(1,1) = 1. + deltat/(2.*taucfl) + deltat/(2.*taukls)
-      Baux(1,2) = -deltat/(2.*taukls)*bsi
-      Baux(2,1) = -deltat/(2.*tauksl)
-      Baux(2,2) = 1. + deltat/(2.*taucfs) + deltat/(2.*tauksl)*bsi +    &
-      2.*fso*sqrt(deltat/taudif)
-      Baux=Baux+Cdoe
-
-! Calculate inverse of B
-      call migs(Baux,2,IBaux)!,indx)
-!      Bdoe(:,:,i)=Baux
-      IB(:,:)=IBaux(:,:)
-!      Bdoe=Bdoe+Cdoe
-
-
-
-       do i=1,nsteps-1
-
-!  Zeroth Order
-
-      KT0(i) = 4d0*sqrt(dble(nsteps+1-i)) - 2.*sqrt(dble(nsteps+2-i))     &
-            - 2d0*sqrt(dble(nsteps-i))
-
-!  First Order
-
-      KTA1(i) = -8d0*sqrt(dble(nsteps+1-i)) *                              &
-      exp(-taubot/deltat/(nsteps+1-i)) +                                &
-      4d0*sqrt(dble(nsteps+2-i)) *exp(-taubot/deltat/(nsteps+2-i)) +           &
-      4d0*sqrt(dble(nsteps-i)) *exp(-taubot/deltat/(nsteps-i))
-
-      KTB1(i) =  4d0*sqrt(Pi*taubot/deltat) * (                        &
-      erf(sqrt(taubot/deltat/(nsteps-i))) +                             &
-      erf(sqrt(taubot/deltat/(nsteps+2-i))) -                           &
-      2d0*erf(sqrt(taubot/deltat/(nsteps+1-i))) )
-
-!% Second Order
-
-      KTA2(i) =  8.*sqrt(dble(nsteps+1-i)) *                               &
-      exp(-4.*taubot/deltat/(nsteps+1-i))- 4.*sqrt(dble(nsteps+2-i))*           &
-      exp(-4.*taubot/deltat/(nsteps+2-i))- 4.*sqrt(dble(nsteps-i)) *            &
-      exp(-4.*taubot/deltat/(nsteps-i))
-
-      KTB2(i) = -8.*sqrt(Pi*taubot/deltat) * (                         &
-      erf(2.*sqrt(taubot/deltat/(dble(nsteps-i)))) +                          &
-      erf(2.*sqrt(taubot/deltat/dble(nsteps+2-i))) -                        &
-       2.*erf(2.*sqrt(taubot/deltat/dble(nsteps+1-i))) )
-
-!% Third Order
-
-      KTA3(i) = -8.*sqrt(dble(nsteps+1-i)) *                              &
-      exp(-9.*taubot/deltat/(nsteps+1.-i)) + 4.*sqrt(dble(nsteps+2-i))*        &
-      exp(-9.*taubot/deltat/(nsteps+2.-i)) + 4.*sqrt(dble(nsteps-i))*          &
-      exp(-9.*taubot/deltat/(nsteps-i))
-
-      KTB3(i) = 12.*sqrt(Pi*taubot/deltat) * (                         &
-      erf(3.*sqrt(taubot/deltat/(nsteps-i))) +                          &
-      erf(3.*sqrt(taubot/deltat/(nsteps+2-i))) -                        &
-      2.*erf(3.*sqrt(taubot/deltat/(nsteps+1-i))) )
-
-       enddo
-
-      Ker = KT0+KTA1+KTB1+KTA2+KTB2+KTA3+KTB3
-
-      Adoe(1,1) = 1d0 - deltat/(2.*taucfl) - deltat/(2.*taukls)
-      Adoe(1,2) =  deltat/(2.*taukls)*bsi
-      Adoe(2,1) =  deltat/(2.*tauksl)
-      Adoe(2,2) = 1d0 - deltat/(2.*taucfs) - deltat/(2.*tauksl)*bsi +   &
-      Ker(nsteps)*fso*sqrt(deltat/taudif)
-     Adoe=Adoe+Cdoe
-
-!    print *,'Adoe=',Adoe(:,:,1)
-!    Cdoe=Cdoe*(deltat**2/12.)
-!    Adoe=Adoe+Cdoe
-!    Bdoe=Bdoe+Cdoe
-
-    RETURN
-
-END SUBROUTINE init_doeclim_parameters
-!------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-SUBROUTINE doeclimtimestep_simple(n,forcing,temp)
-!  ==========================================================================
-! | Simple climate model DOECLIM
-! |
-! | calculates sea surface and land air temperature response to radiative 
-! | forcing based on an energy balance model with 1-D diffusion ocean
-! |
-! | *** computes single time step ***
-! | *** initialize with init_doeclim ***
-! | *** then iterate this function ***
-! |
-! | Input:
-! |       n:        current time step
-! |       forcing:  global radiative forcing (top of atmosphere) (W/m^2)
-! |
-! | Output:
-! |       temp: global mean temperature anomaly (K), relative to preindustrial
-! |
-! | Assumptions: 
-! |       land surface temperature = land air temperature
-! |       mixed layer temperature  = sea surface temperatures 
-! |                                = marine air temperature divided by bsi
-!  ==========================================================================
-
-    implicit none
-
-    integer(i4b),intent(IN) :: n
-    real(DP),intent(OUT) :: temp
-    real(DP), dimension(2) :: DQ, DPAST, QC, DTEAUX
-    real(DP), dimension(nsteps) :: QL, Q0
-    real(DP), dimension(2,nsteps) :: DTE
-    real(DP) :: DelQL, DelQ0
-    real(DP) :: forcing
-    integer(i4b) :: i
-
-     DTE(1,:) = temp_landair
-     DTE(2,:) = temp_sst
-!% assume land and ocean forcings are equal to global forcing
-     QL = forcing !-forcing(1)!-1.4D-1!-FORC(1)    !forcing
-     Q0 = forcing !-forcing(1)!-1.4D-1!-FORC(1)    !forcing
-
-   if (n.gt.2) then
-     DelQL = QL(n) - QL(n-1)
-     DelQ0 = Q0(n) - Q0(n-1)
-
-!    % Assumption: linear forcing change between n and n+1
-!     do i=1,nsteps
-     QC(1) = (DelQL/cal*(1./taucfl+1./taukls)-bsi*DelQ0/cas/taukls)
-     QC(2) = (DelQ0/cas*(1./taucfs+bsi/tauksl)-DelQL/cal/tauksl)
-!     enddo
-     QC = QC* deltat**2/12.
-!    % -------------------------- INITIAL CONDITIONS ------------------------
-!    % Initialization of temperature and forcing vector:
-!    %Factor 1/2 in front of Q in Equation A.27, EK05, and Equation 2.3.27, TK07 is a typo!
-!    %Assumption: linear forcing change between n and n+1
-     DQ(1) = 0.5d0*deltat/cal*(QL(n)+QL(n-1))
-     DQ(2) = 0.5d0*deltat/cas*(Q0(n)+Q0(n-1))
-     DQ = DQ + QC
-
-!    % -------------- SOLVE MODEL ------------------------------------
-!    % Calculate temperatures
-!     DPAST = zeros(2,1)
-     DPAST = 0.0d0
-     do i=1,n-1
-        DPAST(2) = DPAST(2)+DTE(2,i)*Ker(nsteps-n+i)
-     enddo
-     DPAST(2) = DPAST(2)*fso * sqrt(deltat/taudif)
-!     DPAST(2) = fso * sqrt(deltat/taudif) * DTE(2,(1:n-1))*Ker(nsteps-n+1:nsteps-1)  !was transposed
-
-!     DTE(:,n) = IB * ( DQ + DPAST + A*DTE(:,n-1) )
-
-     DTEAUX(1) = Adoe(1,1)*DTE(1,n-1)+Adoe(1,2)*DTE(2,n-1)
-     DTEAUX(2) = Adoe(2,1)*DTE(1,n-1)+Adoe(2,2)*DTE(2,n-1)
-
-     DTE(1,n) = IB(1,1)*(DQ(1)+DPAST(1)+DTEAUX(1))+                  &
-                IB(1,2)*(DQ(2)+DPAST(2)+DTEAUX(2))
-     DTE(2,n) = IB(2,1)*(DQ(1)+DPAST(1)+DTEAUX(1))+                  &
-                IB(2,2)*(DQ(2)+DPAST(2)+DTEAUX(2))
-
-   else
-!% handle initial values
-
-    DTE(:,1) = 0D0
-!    DTE(:,1) = T_ATM_0!0D0
-!     DTE(:,1) = 0.6024D0
-
-     DelQL = QL(2) - QL(1)
-     DelQ0 = Q0(2) - Q0(1)
-
-     QC(1) = DelQL/cal*(1./taucfl+1./taukls)-bsi*DelQ0/cas/taukls
-     QC(2) = DelQ0/cas*(1./taucfs+bsi/tauksl)-DelQL/cal/tauksl
-     QC = QC*deltat**2/12.
-
-     DQ(1) = 0.5d0*deltat/cal*(QL(2)+QL(1))
-     DQ(2) = 0.5d0*deltat/cas*(Q0(2)+Q0(1))
-     DQ= DQ + QC
-
-!     DTE(:,2) = IB * ( DQ +  A*DTE(:,1) )
-     DTEAUX(1)=Adoe(1,1)*DTE(1,1)+Adoe(1,2)*DTE(2,1)
-     DTEAUX(2)=Adoe(2,1)*DTE(1,1)+Adoe(2,2)*DTE(2,1)
-
-
-     DTE(1,2) = IB(1,1)*(DQ(1) +DTEAUX(1))+IB(1,2)*(DQ(2)+DTEAUX(2))
-     DTE(2,2) = IB(2,1)*(DQ(1) +DTEAUX(1))+IB(2,2)*(DQ(2)+DTEAUX(2))
-   endif
-
-     temp_landair(n) = DTE(1,n)
-     temp_sst(n) = DTE(2,n)
-     temp = flnd*temp_landair(n) + (1.-flnd)*bsi*temp_sst(n)
-
-!% Calculate ocean heat uptake [W/m^2]
-!% heatflux(n) captures in the heat flux in the period between n-1 and n
-!% Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
-!% ------------------------------------------------------------------------
-
-
-   if (n.gt.1) then
-     heatflux_mixed(n) = cas*( DTE(2,n)-DTE(2,n-1) )
-
-!     heatflux_interior(n) = cas*fso/sqrt(taudif*deltat)*            &
-!     ( 2.*DTE(2,n) - DTE(2,(1:n-1))*Ker(nsteps-n+2:nsteps) )  !was transposed
-!     heatflux_interior(1)=0.
-     do i=1,n-1
-        heatflux_interior(n) = heatflux_interior(n)+DTE(2,i)*Ker(nsteps-n+1+i)
-     enddo
-     heatflux_interior(n) = cas*fso/sqrt(taudif*deltat)*(2.*DTE(2,n) -       &
-                            heatflux_interior(n))
-
-     heat_mixed(n) = heat_mixed(n-1) +heatflux_mixed(n) *(powtoheat*deltat)
-
-     heat_interior(n) = heat_interior(n-1) + heatflux_interior(n) *      &
-                        (fso*powtoheat*deltat)
-
-   else
-!% handle initial values
-     heatflux_mixed(1) = 0.0d0
-     heatflux_interior(1) = 0.0d0
-
-     heat_mixed(1) = 0.0d0
-     heat_interior(1) = 0.0d0
-   endif
-
-END SUBROUTINE doeclimtimestep_simple
-!------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-SUBROUTINE MIGS(FV,N,X)!,INDX)
-!  ==========================================================================
-! |  Subroutine to invert matrix A(N,N) with the inverse stored
-! |  in X(N,N) in the output.  Copyright (c) Tao Pang 2001.
-! |
-! |  Updated 10/24/2001.
-! |
-! |  ----------------------   Program 4.4   -----------------------------
-! |
-! |*************************************************************************
-! |*                                                                       *
-! |* Please Note:                                                          *
-! |*                                                                       *
-! |* (1) This computer program is written by Tao Pang in conjunction with  *
-! |*     his book, "An Introduction to Computational Physics," published   *
-! |*     by Cambridge University Press in 1997.                            *
-! |*                                                                       *
-! |* (2) No warranties, express or implied, are made for this program.     *
-! |*                                                                       *
-! |*************************************************************************
-! |
-!  ==========================================================================
-
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: N
-    INTEGER :: I,J,K
-    INTEGER, DIMENSION(N) :: INDX
-    real(DP), INTENT(IN), DIMENSION(N,N):: FV
-    real(DP), INTENT(OUT), DIMENSION(N,N):: X
-    real(DP), DIMENSION(N,N) :: VF
-    real(DP), DIMENSION(N,N) :: B
-!
-    VF=FV
-    DO I = 1, N
-      DO J = 1, N
-        B(I,J) = 0.
-      END DO
-    END DO
-    DO I = 1, N
-      B(I,I) = 1.
-    END DO
-!
-!    print *,VF!,N,INDX
-    CALL ELGS(VF,N,INDX)
-!
-    DO I = 1, N-1
-      DO J = I+1, N
-        DO K = 1, N
-          B(INDX(J),K) = B(INDX(J),K)-VF(INDX(J),I)*B(INDX(I),K)
-        END DO
-      END DO
-    END DO
-!
-    DO I = 1, N
-      X(N,I) = B(INDX(N),I)/VF(INDX(N),N)
-      DO J = N-1, 1, -1
-        X(J,I) = B(INDX(J),I)
-        DO K = J+1, N
-          X(J,I) = X(J,I)-VF(INDX(J),K)*X(K,I)
-        END DO
-        X(J,I) =  X(J,I)/VF(INDX(J),J)
-      END DO
-    END DO
-!    print *, X
-END SUBROUTINE MIGS
-!------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-SUBROUTINE ELGS(VF,N,INDX)
-!  ==========================================================================
-! |
-! |  Subroutine to perform the partial-pivoting Gaussian elimination.
-! |  A(N,N) is the original matrix in the input and transformed matrix
-! |  plus the pivoting element ratios below the diagonal in the output.
-! |  INDX(N) records the pivoting order.  Copyright (c) Tao Pang 2001.
-! |
-!  ==========================================================================
-
-    IMPLICIT NONE
-    INTEGER, INTENT(IN) :: N
-    INTEGER :: I,J,K,ITMP
-    INTEGER, INTENT(OUT), DIMENSION(N) :: INDX
-    real(DP) :: C1,PI,PI1,PJ
-    real(DP), INTENT(INOUT), DIMENSION(N,N) :: VF
-    real(DP), DIMENSION (N) :: C
-!
-! Initialize the index
-!
-!    print *,VF
-    DO I = 1, N
-      INDX(I) = I
-    END DO
-!
-! Find the rescaling factors, one from each row
-!
-    DO I = 1, N
-      C1= 0.
-      DO J = 1, N
-        C1 = MAX(C1,ABS(VF(I,J)))
-      END DO
-      C(I) = C1
-    END DO
-!
-! Search the pivoting (largest) element from each column
-! Search the pivoting (largest) element from each column
-!
-    DO J = 1, N-1
-      PI1 = 0.
-      DO I = J, N
-        PI = ABS(VF(INDX(I),J))/C(INDX(I))
-        IF (PI.GT.PI1) THEN
-          PI1 = PI
-          K   = I
-        ENDIF
-      END DO
-!
-! Interchange the rows via INDX(N) to record pivoting order
-!
-      ITMP    = INDX(J)
-      INDX(J) = INDX(K)
-      INDX(K) = ITMP
-      DO I = J+1, N
-        PJ  = VF(INDX(I),J)/VF(INDX(J),J)
-!
-! Record pivoting ratios below the diagonal
-!
-        VF(INDX(I),J) = PJ
-!
-! Modify other elements accordingly
-!
-        DO K = J+1, N
-          VF(INDX(I),K) = VF(INDX(I),K)-PJ*VF(INDX(J),K)
-        END DO
-      END DO
-    END DO
-!
-END SUBROUTINE ELGS
-!------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-SUBROUTINE alloc_doeclim()
-
-    implicit none
-    
-    integer(i4b) :: astat = 0
-
-    allocate(temp_landair(nsteps), STAT=astat)
-    allocate(temp_sst(nsteps), STAT=astat)
-    allocate(heat_mixed(nsteps), STAT=astat)
-    allocate(heat_interior(nsteps), STAT=astat)
-    allocate(heatflux_mixed(nsteps), STAT=astat)
-    allocate(heatflux_interior(nsteps), STAT=astat)
-    allocate(Ker(nsteps), STAT=astat)
-
-    if (astat > 0) print *, "Problem allocating doeclim arrays."
-
-    RETURN
-
-END SUBROUTINE alloc_doeclim
-!------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-SUBROUTINE dealloc_doeclim()
-
-    implicit none
-    
-    integer(i4b) :: astat = 0
-
-    deallocate(temp_landair, STAT=astat)
-    deallocate(temp_sst, STAT=astat)
-    deallocate(heat_mixed, STAT=astat)
-    deallocate(heat_interior, STAT=astat)
-    deallocate(heatflux_mixed, STAT=astat)
-    deallocate(heatflux_interior, STAT=astat)
-    deallocate(Ker, STAT=astat)
-
-    if (astat > 0) print *, "Problem deallocating doeclim arrays."
-
-    RETURN
-
-END SUBROUTINE dealloc_doeclim
-!------------------------------------------------------------------------------
-
-END MODULE doeclim
+	KTB2[nsteps] = -8*sqrt(pi*doeclimvars.taubot/deltat) * (1.+ erf(sqrt(2.*doeclimvars.taubot/deltat)) - 2.*erf(2.*sqrt(doeclimvars.taubot/deltat)) )
+
+	# Third Order
+
+    KTA3[nsteps] = -8.*exp(-9.*doeclimvars.taubot/deltat) + 4*sqrt(2.)*exp(-4.5*doeclimvars.taubot/deltat)
+
+    KTB3[nsteps] = 12.*sqrt(pi*doeclimvars.taubot/deltat) * (1 +erf(sqrt(4.5*doeclimvars.taubot/deltat)) - 2.*erf(3.*sqrt(doeclimvars.taubot/deltat)) )
+
+	# %Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
+	# %Switched on (To switch off, comment out lines below)
+    Cdoe[1,1] = 1./doeclimvars.taucfl^2+1./doeclimvars.taukls^2+2./doeclimvars.taucfl/doeclimvars.taukls+bsi/doeclimvars.taukls/doeclimvars.tauksl
+    Cdoe[1,2] = -bsi/doeclimvars.taukls^2-bsi/doeclimvars.taucfl/doeclimvars.taukls-bsi/doeclimvars.taucfs/doeclimvars.taukls-bsi^2/doeclimvars.taukls/doeclimvars.tauksl
+    Cdoe[2,1] = -bsi/doeclimvars.tauksl^2-1./doeclimvars.taucfs/doeclimvars.tauksl-1./doeclimvars.taucfl/doeclimvars.tauksl-1./doeclimvars.taukls/doeclimvars.tauksl
+    Cdoe[2,2] =  1./doeclimvars.taucfs^2+bsi^2/doeclimvars.tauksl^2+2.*bsi/doeclimvars.taucfs/doeclimvars.tauksl+bsi/doeclimvars.taukls/doeclimvars.tauksl
+    Cdoe = Cdoe*(deltat^2/12.)
+
+	#%------------------------------------------------------------------
+	#% Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
+	#% T = (TL,TO)
+	#% (Equation A.27, EK05, or Equations 2.3.24 and 2.3.27, TK07)
+    Baux[1,1] = 1. + deltat/(2.*doeclimvars.taucfl) + deltat/(2.*doeclimvars.taukls)
+    Baux[1,2] = -deltat/(2.*doeclimvars.taukls)*bsi
+    Baux[2,1] = -deltat/(2.*doeclimvars.tauksl)
+    Baux[2,2] = 1. + deltat/(2.*doeclimvars.taucfs) + deltat/(2.*doeclimvars.tauksl)*bsi + 2.*fso*sqrt(deltat/doeclimvars.taudif)
+    Baux = Baux+Cdoe
+
+	# Calculate inverse of B
+    #call migs(Baux,2,IBaux)
+    #IB[:,:]=IBaux(:,:)
+    doeclimvars.IB[:,:]=inv(Baux)[:,:]
+
+	for i = 1:nsteps-1
+
+		# Zeroth Order
+
+      	KT0[i] = 4*sqrt(float64(nsteps+1-i)) - 2.*sqrt(float64(nsteps+2-i)) - 2*sqrt(float64(nsteps-i))
+
+		# First Order
+
+		KTA1[i] = -8*sqrt(float64(nsteps+1-i)) * exp(-doeclimvars.taubot/deltat/(nsteps+1-i)) + 4*sqrt(float64(nsteps+2-i)) *exp(-doeclimvars.taubot/deltat/(nsteps+2-i)) + 4*sqrt(float64(nsteps-i)) *exp(-doeclimvars.taubot/deltat/(nsteps-i))
+
+    	KTB1[i] = 4*sqrt(pi*doeclimvars.taubot/deltat) * (erf(sqrt(doeclimvars.taubot/deltat/(nsteps-i))) + erf(sqrt(doeclimvars.taubot/deltat/(nsteps+2-i))) - 2*erf(sqrt(doeclimvars.taubot/deltat/(nsteps+1-i))) )
+
+		# Second Order
+
+		KTA2[i] =  8.*sqrt(float64(nsteps+1-i)) * exp(-4.*doeclimvars.taubot/deltat/(nsteps+1-i))- 4.*sqrt(float64(nsteps+2-i))*exp(-4.*doeclimvars.taubot/deltat/(nsteps+2-i))- 4.*sqrt(float64(nsteps-i)) * exp(-4.*doeclimvars.taubot/deltat/(nsteps-i))
+
+		KTB2[i] = -8.*sqrt(pi*doeclimvars.taubot/deltat) * (erf(2.*sqrt(doeclimvars.taubot/deltat/(float64(nsteps-i)))) + erf(2.*sqrt(doeclimvars.taubot/deltat/float64(nsteps+2-i))) -       2.*erf(2.*sqrt(doeclimvars.taubot/deltat/float64(nsteps+1-i))) )
+
+		# Third Order
+
+		KTA3[i] = -8.*sqrt(float64(nsteps+1-i)) *exp(-9.*doeclimvars.taubot/deltat/(nsteps+1.-i)) + 4.*sqrt(float64(nsteps+2-i))*exp(-9.*doeclimvars.taubot/deltat/(nsteps+2.-i)) + 4.*sqrt(float64(nsteps-i))*exp(-9.*doeclimvars.taubot/deltat/(nsteps-i))
+
+		KTB3[i] = 12.*sqrt(pi*doeclimvars.taubot/deltat) * (erf(3.*sqrt(doeclimvars.taubot/deltat/(nsteps-i))) + erf(3.*sqrt(doeclimvars.taubot/deltat/(nsteps+2-i))) - 2.*erf(3.*sqrt(doeclimvars.taubot/deltat/(nsteps+1-i))) )
+	end
+
+	doeclimvars.Ker = KT0+KTA1+KTB1+KTA2+KTB2+KTA3+KTB3
+
+	doeclimvars.Adoe[1,1] = 1 - deltat/(2.*doeclimvars.taucfl) - deltat/(2.*doeclimvars.taukls)
+    doeclimvars.Adoe[1,2] =  deltat/(2.*doeclimvars.taukls)*bsi
+    doeclimvars.Adoe[2,1] =  deltat/(2.*doeclimvars.tauksl)
+    doeclimvars.Adoe[2,2] = 1 - deltat/(2.*doeclimvars.taucfs) - deltat/(2.*doeclimvars.tauksl)*bsi + doeclimvars.Ker[nsteps]*fso*sqrt(deltat/doeclimvars.taudif)    
+    doeclimvars.Adoe=doeclimvars.Adoe+Cdoe
+end
+
+#!------------------------------------------------------------------------------
+#
+#!------------------------------------------------------------------------------
+#SUBROUTINE doeclimtimestep_simple(n,forcing,temp)
+#!  ==========================================================================
+#! | Simple climate model DOECLIM
+#! |
+#! | calculates sea surface and land air temperature response to radiative 
+#! | forcing based on an energy balance model with 1-D diffusion ocean
+#! |
+#! | *** computes single time step ***
+#! | *** initialize with init_doeclim ***
+#! | *** then iterate this function ***
+#! |
+#! | Input:
+#! |       n:        current time step
+#! |       forcing:  global radiative forcing (top of atmosphere) (W/m^2)
+#! |
+#! | Output:
+#! |       temp: global mean temperature anomaly (K), relative to preindustrial
+#! |
+#! | Assumptions: 
+#! |       land surface temperature = land air temperature
+#! |       mixed layer temperature  = sea surface temperatures 
+#! |                                = marine air temperature divided by bsi
+#!  ==========================================================================#
+#
+#    implicit none#
+#
+#    integer(i4b),intent(IN) :: n
+#    real(DP),intent(OUT) :: temp
+#    real(DP), dimension(2) :: DQ, DPAST, QC, DTEAUX
+#    real(DP), dimension(nsteps) :: QL, Q0
+#    real(DP), dimension(2,nsteps) :: DTE
+#    real(DP) :: DelQL, DelQ0
+#    real(DP) :: forcing
+#    integer(i4b) :: i
+#
+#     DTE(1,:) = temp_landair
+#     DTE(2,:) = temp_sst
+#!% assume land and ocean forcings are equal to global forcing
+#     QL = forcing !-forcing(1)!-1.4D-1!-FORC(1)    !forcing
+#     Q0 = forcing !-forcing(1)!-1.4D-1!-FORC(1)    !forcing
+#
+#   if (n.gt.2) then
+#     DelQL = QL(n) - QL(n-1)
+#     DelQ0 = Q0(n) - Q0(n-1)
+#
+#!    % Assumption: linear forcing change between n and n+1
+#!     do i=1,nsteps
+#     QC(1) = (DelQL/cal*(1./taucfl+1./taukls)-bsi*DelQ0/cas/taukls)
+#     QC(2) = (DelQ0/cas*(1./taucfs+bsi/tauksl)-DelQL/cal/tauksl)
+#!     enddo
+#     QC = QC* deltat^2/12.
+#!    % -------------------------- INITIAL CONDITIONS ------------------------
+#!    % Initialization of temperature and forcing vector:
+#!    %Factor 1/2 in front of Q in Equation A.27, EK05, and Equation 2.3.27, TK07 is a typo!
+#!    %Assumption: linear forcing change between n and n+1
+#     DQ(1) = 0.5d0*deltat/cal*(QL(n)+QL(n-1))
+#     DQ(2) = 0.5d0*deltat/cas*(Q0(n)+Q0(n-1))
+#     DQ = DQ + QC
+#
+#!    % -------------- SOLVE MODEL ------------------------------------
+#!    % Calculate temperatures
+#!     DPAST = zeros(2,1)
+#     DPAST = 0.0d0
+#     do i=1,n-1
+#        DPAST(2) = DPAST(2)+DTE(2,i)*Ker(nsteps-n+i)
+#     enddo
+#     DPAST(2) = DPAST(2)*fso * sqrt(deltat/taudif)
+#!     DPAST(2) = fso * sqrt(deltat/taudif) * DTE(2,(1:n-1))*Ker(nsteps-n+1:nsteps-1)  !was transposed
+#
+#!     DTE(:,n) = IB * ( DQ + DPAST + A*DTE(:,n-1) )
+#
+#     DTEAUX(1) = Adoe(1,1)*DTE(1,n-1)+Adoe(1,2)*DTE(2,n-1)
+#     DTEAUX(2) = Adoe(2,1)*DTE(1,n-1)+Adoe(2,2)*DTE(2,n-1)
+#
+#     DTE(1,n) = IB(1,1)*(DQ(1)+DPAST(1)+DTEAUX(1))+                  &
+#                IB(1,2)*(DQ(2)+DPAST(2)+DTEAUX(2))
+#     DTE(2,n) = IB(2,1)*(DQ(1)+DPAST(1)+DTEAUX(1))+                  &
+#                IB(2,2)*(DQ(2)+DPAST(2)+DTEAUX(2))
+#
+#   else
+#!% handle initial values
+#
+#    DTE(:,1) = 0D0
+#!    DTE(:,1) = T_ATM_0!0D0
+#!     DTE(:,1) = 0.6024D0
+#
+#     DelQL = QL(2) - QL(1)
+#     DelQ0 = Q0(2) - Q0(1)
+#
+#     QC(1) = DelQL/cal*(1./taucfl+1./taukls)-bsi*DelQ0/cas/taukls
+#     QC(2) = DelQ0/cas*(1./taucfs+bsi/tauksl)-DelQL/cal/tauksl
+#     QC = QC*deltat**2/12.
+#
+#     DQ(1) = 0.5d0*deltat/cal*(QL(2)+QL(1))
+#     DQ(2) = 0.5d0*deltat/cas*(Q0(2)+Q0(1))
+#     DQ= DQ + QC
+#
+#!     DTE(:,2) = IB * ( DQ +  A*DTE(:,1) )
+#     DTEAUX(1)=Adoe(1,1)*DTE(1,1)+Adoe(1,2)*DTE(2,1)
+#     DTEAUX(2)=Adoe(2,1)*DTE(1,1)+Adoe(2,2)*DTE(2,1)
+
+
+#     DTE(1,2) = IB(1,1)*(DQ(1) +DTEAUX(1))+IB(1,2)*(DQ(2)+DTEAUX(2))
+#     DTE(2,2) = IB(2,1)*(DQ(1) +DTEAUX(1))+IB(2,2)*(DQ(2)+DTEAUX(2))
+#   endif
+
+#     temp_landair(n) = DTE(1,n)
+#     temp_sst(n) = DTE(2,n)
+#     temp = flnd*temp_landair(n) + (1.-flnd)*bsi*temp_sst(n)
+
+#!% Calculate ocean heat uptake [W/m^2]
+#!% heatflux(n) captures in the heat flux in the period between n-1 and n
+#!% Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
+#!% ------------------------------------------------------------------------
+
+
+#   if (n.gt.1) then
+#     heatflux_mixed(n) = cas*( DTE(2,n)-DTE(2,n-1) )
+
+#!     heatflux_interior(n) = cas*fso/sqrt(taudif*deltat)*            &
+#!     ( 2.*DTE(2,n) - DTE(2,(1:n-1))*Ker(nsteps-n+2:nsteps) )  !was transposed
+#!     heatflux_interior(1)=0.
+#     do i=1,n-1
+#        heatflux_interior(n) = heatflux_interior(n)+DTE(2,i)*Ker(nsteps-n+1+i)
+#     enddo
+#     heatflux_interior(n) = cas*fso/sqrt(taudif*deltat)*(2.*DTE(2,n) -       &
+#                            heatflux_interior(n))
+
+#     heat_mixed(n) = heat_mixed(n-1) +heatflux_mixed(n) *(powtoheat*deltat)
+
+#     heat_interior(n) = heat_interior(n-1) + heatflux_interior(n) *      &
+#                        (fso*powtoheat*deltat)
+
+#   else
+#!% handle initial values
+#     heatflux_mixed(1) = 0.0d0
+#     heatflux_interior(1) = 0.0d0
+
+#    heat_mixed(1) = 0.0d0
+#     heat_interior(1) = 0.0d0
+#   endif
+
+#END SUBROUTINE doeclimtimestep_simple
+end
