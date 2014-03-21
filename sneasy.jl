@@ -29,11 +29,14 @@ pardoeclim.forcing = varradforc.rf
 parccm.temp = vardoeclim.temp
 parradforc.atmco2 = varccm.atmco2
 
-doeclim.init(pardoeclim, vardoeclim)
-ccm.init(parccm, varccm)
+function runsneasy(pardoeclim,vardoeclim,parccm,varccm,parradforc,varradforc)
 
-for t=1:nsteps
-	radforc.timestep(parradforc, varradforc, t)
-	doeclim.timestep(pardoeclim, vardoeclim, t)
-	ccm.timestep(parccm, varccm, t)
+	doeclim.init(pardoeclim, vardoeclim)
+	ccm.init(parccm, varccm)
+
+	for t=1:nsteps
+		radforc.timestep(parradforc, varradforc, t)
+		doeclim.timestep(pardoeclim, vardoeclim, t)
+		ccm.timestep(parccm, varccm, t)
+	end
 end
