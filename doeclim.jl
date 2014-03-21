@@ -159,8 +159,6 @@ function init(p::doeclimpar, v::doeclimvar)
 	Cdoe = Array(Float64, 2, 2)
 	Baux = Array(Float64, 2, 2)
 
-#    real(DP) :: cden
-
 	# DEPENDENT MODEL PARAMETERS
 	ocean_area = (1.0-flnd)*earth_area
 
@@ -169,7 +167,6 @@ function init(p::doeclimpar, v::doeclimvar)
 	cnum = rlam*flnd + bsi * (1.0-flnd)
 
 	cden = rlam * flnd - ak *(rlam-bsi)
-
 
 	# vertical diffusivity in [m^2/a]
 
@@ -211,7 +208,6 @@ function init(p::doeclimpar, v::doeclimvar)
 
     v.taukls  = flnd * cal / kls
 
-
 	# Zeroth Order
 
     KT0[p.nsteps] = 4-2*sqrt(2.)
@@ -234,8 +230,8 @@ function init(p::doeclimpar, v::doeclimvar)
 
     KTB3[p.nsteps] = 12.*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2.*erf(3.*sqrt(v.taubot/p.deltat)) )
 
-	# %Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
-	# %Switched on (To switch off, comment out lines below)
+	# Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
+	# Switched on (To switch off, comment out lines below)
     Cdoe[1,1] = 1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl
     Cdoe[1,2] = -bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl
     Cdoe[2,1] = -bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl
@@ -314,16 +310,8 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
 # |       mixed layer temperature  = sea surface temperatures 
 # |                                = marine air temperature divided by bsi
 #  ==========================================================================#
-	DQ = Array(Float64,2)
-	DPAST = Array(Float64,2)
-	QC = Array(Float64,2)
-	DTEAUX = Array(Float64,2)
-	QL = Array(Float64, p.nsteps)
-	Q0 = Array(Float64, p.nsteps)
-	DTE = Array(Float64, 2, p.nsteps)
-
-	DTE[1,:] = s.temp_landair
-	DTE[2,:] = s.temp_sst
+	DTE1 = s.temp_landair
+	DTE2 = s.temp_sst
 
 	# assume land and ocean forcings are equal to global forcing
 	QL = p.forcing
@@ -334,57 +322,61 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
      	DelQ0 = Q0[n] - Q0[n-1]
 
 		# Assumption: linear forcing change between n and n+1
-		QC[1] = (DelQL/cal*(1./s.taucfl+1./s.taukls)-bsi*DelQ0/cas/s.taukls)
-		QC[2] = (DelQ0/cas*(1./s.taucfs+bsi/s.tauksl)-DelQL/cal/s.tauksl)
+		QC1 = (DelQL/cal*(1./s.taucfl+1./s.taukls)-bsi*DelQ0/cas/s.taukls)
+		QC2 = (DelQ0/cas*(1./s.taucfs+bsi/s.tauksl)-DelQL/cal/s.tauksl)
 
-		QC = QC* p.deltat^2/12.
+		QC1 = QC1 * p.deltat^2/12.
+		QC2 = QC2 * p.deltat^2/12.
 		# -------------------------- INITIAL CONDITIONS ------------------------
 		# Initialization of temperature and forcing vector:
 		# Factor 1/2 in front of Q in Equation A.27, EK05, and Equation 2.3.27, TK07 is a typo!
 		# Assumption: linear forcing change between n and n+1
-		DQ[1] = 0.5*p.deltat/cal*(QL[n]+QL[n-1])
-		DQ[2] = 0.5*p.deltat/cas*(Q0[n]+Q0[n-1])
-		DQ = DQ + QC
+		DQ1 = 0.5*p.deltat/cal*(QL[n]+QL[n-1])
+		DQ2 = 0.5*p.deltat/cas*(Q0[n]+Q0[n-1])
+		DQ1 = DQ1 + QC1
+		DQ2 = DQ2 + QC2
 
 		# -------------- SOLVE MODEL ------------------------------------
 		# Calculate temperatures
-		DPAST[:] = 0.0
+		DPAST1 = 0.0
+		DPAST2 = 0.0
 		for i=1:n-1
-			DPAST[2] = DPAST[2]+DTE[2,i]*s.Ker[p.nsteps-n+i]
+			DPAST2 = DPAST2+DTE2[i]*s.Ker[p.nsteps-n+i]
 		end
 
-		DPAST[2] = DPAST[2]*fso * sqrt(p.deltat/s.taudif)
+		DPAST2 = DPAST2*fso * sqrt(p.deltat/s.taudif)
 
-		DTEAUX[1] = s.Adoe[1,1]*DTE[1,n-1]+s.Adoe[1,2]*DTE[2,n-1]
-		DTEAUX[2] = s.Adoe[2,1]*DTE[1,n-1]+s.Adoe[2,2]*DTE[2,n-1]
+		DTEAUX1 = s.Adoe[1,1]*DTE1[n-1]+s.Adoe[1,2]*DTE2[n-1]
+		DTEAUX2 = s.Adoe[2,1]*DTE1[n-1]+s.Adoe[2,2]*DTE2[n-1]
 
-		DTE[1,n] = s.IB[1,1]*(DQ[1]+DPAST[1]+DTEAUX[1])+s.IB[1,2]*(DQ[2]+DPAST[2]+DTEAUX[2])
-		DTE[2,n] = s.IB[2,1]*(DQ[1]+DPAST[1]+DTEAUX[1])+s.IB[2,2]*(DQ[2]+DPAST[2]+DTEAUX[2])
+		DTE1[n] = s.IB[1,1]*(DQ1+DPAST1+DTEAUX1)+s.IB[1,2]*(DQ2+DPAST2+DTEAUX2)
+		DTE2[n] = s.IB[2,1]*(DQ1+DPAST1+DTEAUX1)+s.IB[2,2]*(DQ2+DPAST2+DTEAUX2)
 	else
 		# handle initial values
 
-		DTE[:,1] = 0
+		DTE1[1] = 0.0
+		DTE2[1] = 0.0
 
 		DelQL = QL[2] - QL[1]
 		DelQ0 = Q0[2] - Q0[1]
 
-		QC[1] = DelQL/cal*(1./s.taucfl+1./s.taukls)-bsi*DelQ0/cas/s.taukls
-		QC[2] = DelQ0/cas*(1./s.taucfs+bsi/s.tauksl)-DelQL/cal/s.tauksl
-		QC = QC*p.deltat^2/12.
+		QC1 = DelQL/cal*(1./s.taucfl+1./s.taukls)-bsi*DelQ0/cas/s.taukls
+		QC2 = DelQ0/cas*(1./s.taucfs+bsi/s.tauksl)-DelQL/cal/s.tauksl
+		QC1 = QC1*p.deltat^2/12.
+		QC2 = QC2*p.deltat^2/12.
 
-		DQ[1] = 0.5*p.deltat/cal*(QL[2]+QL[1])
-		DQ[2] = 0.5*p.deltat/cas*(Q0[2]+Q0[1])
-		DQ= DQ + QC
+		DQ1 = 0.5*p.deltat/cal*(QL[2]+QL[1])
+		DQ2 = 0.5*p.deltat/cas*(Q0[2]+Q0[1])
+		DQ1= DQ1 + QC1
+		DQ2= DQ2 + QC2
 
-		DTEAUX[1]=s.Adoe[1,1]*DTE[1,1]+s.Adoe[1,2]*DTE[2,1]
-		DTEAUX[2]=s.Adoe[2,1]*DTE[1,1]+s.Adoe[2,2]*DTE[2,1]
+		DTEAUX1=s.Adoe[1,1]*DTE1[1]+s.Adoe[1,2]*DTE2[1]
+		DTEAUX2=s.Adoe[2,1]*DTE1[1]+s.Adoe[2,2]*DTE2[1]
 
-		DTE[1,2] = s.IB[1,1]*(DQ[1] +DTEAUX[1])+s.IB[1,2]*(DQ[2]+DTEAUX[2])
-		DTE[2,2] = s.IB[2,1]*(DQ[1] +DTEAUX[1])+s.IB[2,2]*(DQ[2]+DTEAUX[2])
+		DTE1[2] = s.IB[1,1]*(DQ1 +DTEAUX1)+s.IB[1,2]*(DQ2+DTEAUX2)
+		DTE2[2] = s.IB[2,1]*(DQ1 +DTEAUX1)+s.IB[2,2]*(DQ2+DTEAUX2)
 	end
-
-	s.temp_landair[n] = DTE[1,n]
-	s.temp_sst[n] = DTE[2,n]
+	
 	s.temp[n] = flnd*s.temp_landair[n] + (1.-flnd)*bsi*s.temp_sst[n]
 
 	# Calculate ocean heat uptake [W/m^2]
@@ -394,12 +386,12 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
 
 
 	if n>1
-		s.heatflux_mixed[n] = cas*( DTE[2,n]-DTE[2,n-1] )
+		s.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
 
 		for i=1:n-1
-        	s.heatflux_interior[n] = s.heatflux_interior[n]+DTE[2,i]*s.Ker[p.nsteps-n+1+i]
+        	s.heatflux_interior[n] = s.heatflux_interior[n]+DTE2[i]*s.Ker[p.nsteps-n+1+i]
 		end
-		s.heatflux_interior[n] = cas*fso/sqrt(s.taudif*p.deltat)*(2.*DTE[2,n] - s.heatflux_interior[n])
+		s.heatflux_interior[n] = cas*fso/sqrt(s.taudif*p.deltat)*(2.*DTE2[n] - s.heatflux_interior[n])
 
 		s.heat_mixed[n] = s.heat_mixed[n-1] +s.heatflux_mixed[n] *(s.powtoheat*p.deltat)
 

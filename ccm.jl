@@ -80,6 +80,8 @@ type ccmvar
     atmco2::Vector{Float64}
     landflux::Vector{Float64}
     atm_oc_flux::Vector{Float64}
+    Ftp::Vector{Float64}
+    Goc::Vector{Float64}
 
     function ccmvar(p::ccmpar)
         vars = new(
@@ -87,7 +89,9 @@ type ccmvar
             zeros(p.nsteps+1,4),
             zeros(p.nsteps+1),
             zeros(p.nsteps),
-            zeros(p.nsteps))
+            zeros(p.nsteps),
+            zeros(4),
+            zeros(4))
         return vars
     end
 end
@@ -181,13 +185,14 @@ function timestep(p::ccmpar, v::ccmvar, t::Int)
     v.landflux[t] = resp_h - npp
 	
     # Set terrestrial pool sizes for next timestep	
-    Ftp = Array(Float64,4)
-    Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
-    Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
-    Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
-    Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
+    v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
+    v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
+    v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
+    v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
       
-    v.tpools[t+1,:] = vec(v.tpools[t,:]) + p.deltat*Ftp[:]
+    for i=1:4
+        v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
+    end
 
     netemissions = p.CO2_emissions[t] + v.landflux[t]
 	   
@@ -196,14 +201,15 @@ function timestep(p::ccmpar, v::ccmvar, t::Int)
     fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
     
     # Compute carbon anomaly in ocean mixed layer/atmosphere
-    Goc = Array(Float64,4)
-    Goc[1] = netemissions-(p.Eta/hs)*v.ocanom[t,1]* fracinoc+(p.Eta/h2)*v.ocanom[t,2]
+    v.Goc[1] = netemissions-(p.Eta/hs)*v.ocanom[t,1]* fracinoc+(p.Eta/h2)*v.ocanom[t,2]
     # Compute carbon anomaly in ocean layers 2-4
-    Goc[2] = (p.Eta/hs)*v.ocanom[t,1]*fracinoc- ((p.Eta+n3)/h2)*v.ocanom[t,2]+(n3/h3)*v.ocanom[t,3]
-    Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
-    Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
+    v.Goc[2] = (p.Eta/hs)*v.ocanom[t,1]*fracinoc- ((p.Eta+n3)/h2)*v.ocanom[t,2]+(n3/h3)*v.ocanom[t,3]
+    v.Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
+    v.Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
 
-    v.ocanom[t+1,:] = vec(v.ocanom[t,:]) + p.deltat*Goc[:]
+    for i=1:4
+        v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
+    end
     
     # Compute flux into ocean
     v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
