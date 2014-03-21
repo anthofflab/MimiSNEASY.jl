@@ -11,10 +11,9 @@ f_nonco2forcing = readdlm("non_CO2_forcing.txt")
 nsteps = 566
 #nsteps = 200
 
-pardoeclim = doeclim.doeclimpar(nsteps,1,3,0.5,zeros(nsteps))
+pardoeclim = doeclim.doeclimpar(nsteps,1,2.0,1.1,zeros(nsteps))
 
-parccm = ccm.ccmpar(nsteps,1,3,1.126598,0.2916273,172.2809,zeros(nsteps),vec(f_emissions[:,2]),zeros(100,16000))
-parccm.CO2_emissions[:] = 7
+parccm = ccm.ccmpar(nsteps,1,2.0,1.311,0.502,17.722,zeros(nsteps),vec(f_emissions[:,2]),zeros(100,16000))
 for i=1:16000
     parccm.anomtable[:,i] = f_anomtable[i,:]
 end

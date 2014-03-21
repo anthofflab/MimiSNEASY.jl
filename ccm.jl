@@ -1,48 +1,31 @@
-#!  CCM:   Carbon Cycle Model
-#!
-#!  Copyright (C) 2009 D. Ricciuto, B. Tuttle, K. Keller
-#!
-#!  This program is free software; you can redistribute it and/or modify
-#!  it under the terms of the GNU General Public License as published by
-#!  the Free Software Foundation; either version 2 of the License, or
-#!  (at your option) any later version.
-#!
-#!  This program is distributed in the hope that it will be useful,
-#!  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#!  GNU General Public License for more details.
-#!
-#!  You should have received a copy of the GNU General Public License
-#!  along with this program; if not, write to the Free Software
-#!  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#!
-#!------------------------------------------------------------------------------
-#! Nonlinear impulse response carbon/climate model
-#! based on the NICCS model from Hooss et al. (2001)
-#! original version by DMRicciuto 7/16/2004
-#!
-#! Notes from model-code-draft-3/src/model.f90 (D. McInerney):
-#!   Terrestrial model:  4 box model based on Meyer et al. (1999)
-#!   Model to be calibrated based on flux tower data synthesis
-#!   Oceanic model currently using linear IRFs
-#!   Climate model calibrated to Hamburg AOGCM (T only)
-#!
-#! See model details in:
-#!   Ricciuto, D. M., K. J. Davis, and K. Keller (2008), A Bayesian calibration 
-#!       of a simple carbon cycle model: The role of observations in estimating 
-#!       and reducing uncertainty, Global Biogeochem. Cycles, 22, GB2030, 
-#!       doi:10.1029/2006GB002908.
-#!
-#!------------------------------------------------------------------------------
-#!  13 Mar 2009  Brian Tuttle <btuttle@psu.edu> received 
-#!               globalinversion_fortran/model.f from Dan Ricciuto.
-#!   May 2009    Rewrote model() subroutine as CCM.f90 module, including 
-#!               initialization, (de)allocation, and CC_model subroutines.
-#!   Aug 2009    Incorporated CCM.f90 into EarthSystem module.
-#!               Removed usetemp logical switch as well as the simple impulse
-#!               response carbon/climate model in lieue of externally 
-#!               computed temperature forcing.
-#!------------------------------------------------------------------------------
+#  CCM:   Carbon Cycle Model
+#------------------------------------------------------------------------------
+# Nonlinear impulse response carbon/climate model
+# based on the NICCS model from Hooss et al. (2001)
+# original version by DMRicciuto 7/16/2004
+#
+# Notes from model-code-draft-3/src/model.f90 (D. McInerney):
+#   Terrestrial model:  4 box model based on Meyer et al. (1999)
+#   Model to be calibrated based on flux tower data synthesis
+#   Oceanic model currently using linear IRFs
+#   Climate model calibrated to Hamburg AOGCM (T only)
+#
+# See model details in:
+#   Ricciuto, D. M., K. J. Davis, and K. Keller (2008), A Bayesian calibration 
+#       of a simple carbon cycle model: The role of observations in estimating 
+#       and reducing uncertainty, Global Biogeochem. Cycles, 22, GB2030, 
+#       doi:10.1029/2006GB002908.
+#
+#------------------------------------------------------------------------------
+#  13 Mar 2009  Brian Tuttle <btuttle@psu.edu> received 
+#               globalinversion_fortran/model.f from Dan Ricciuto.
+#   May 2009    Rewrote model() subroutine as CCM.f90 module, including 
+#               initialization, (de)allocation, and CC_model subroutines.
+#   Aug 2009    Incorporated CCM.f90 into EarthSystem module.
+#               Removed usetemp logical switch as well as the simple impulse
+#               response carbon/climate model in lieue of externally 
+#               computed temperature forcing.
+#------------------------------------------------------------------------------
 
 module ccm
 
@@ -68,7 +51,7 @@ type ccmpar
     Clim_sens::Float64
     Q10::Float64
     Beta::Float64
-    Eta::Float64 #default 16.88,   diffusion coeffs [m/yr]
+    Eta::Float64            #default 16.88,   diffusion coeffs [m/yr]
     temp::Vector{Float64}
     CO2_emissions::Vector{Float64}
     anomtable::Array{Float64,2}
@@ -96,82 +79,16 @@ type ccmvar
     end
 end
 
-#! Input parameters:
-#    real(DP) :: Cs          ! Climate sensitivity
-#    real(DP) :: Q10         ! Respiration Temperature sens.
-#    real(DP) :: Beta        ! Carbon Fertilization param.
-#    real(DP) :: Eta         ! Thermocline transfer velocity
-
-#    real(DP), dimension(2) :: trm
-#    real(DP), dimension(2) :: err
-#    real(DP), dimension(:,:), allocatable, public :: anomtable
-#    integer(i4b), dimension(2), public :: ATsize 
-
-#! Model parameters:
-#    real(DP) :: n2, n3, n4, hs, h1, h2, h3, h4, npp0
-#    real(DP), dimension(:,:), allocatable :: tpools
-#    real(DP), dimension(:,:), allocatable :: ocanom
-#    real(DP), dimension(4) :: Ftp, Goc
-
-#! Model factors:
-#!    real(DP) :: deltat
-
-#! Climate model variables:
-#!    real(DP) :: a1, a2, tao1, tao2
-#    real(DP), dimension(:), allocatable, public :: atmco2
-#    real(DP), dimension(:), allocatable, public :: landflux
-#    real(DP), dimension(:), allocatable, public :: atm_oc_flux
-#    real(DP), dimension(:), allocatable, public :: emissions    ![GtC/yr]
-
-#    public :: init_CCM_arrays, init_CCM_parameters, CC_model, dealloc_CCM
-#    public :: alloc_anomtab, dealloc_anomtab
-
 function init(p::ccmpar, v::ccmvar)
-    #  =========================================================================
-    # |  Allocate and initialize Carbon Cycle Model arrays.  Set first array    |
-    # |  elements to preindustrial values.                                      |
-    #  =========================================================================
-
-
-    #! Initialize terrestrial pools (equilibrium preindustrial values)
-    #    tpools = 0.0
-    #    Ftp = 0.0
-
     v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
     v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
     v.tpools[1,3] = 120.0     # Detritus [GtC]
     v.tpools[1,4] = 1500.0    # Soil carbon [GtC]
 
-    #    landflux = 0.0
-      
-    #    ocanom = 0.0
-    #    Goc = 0.0
-
-    #    atmco2(:) = 0.0
     v.atmco2[1] = 285.2        # [ppm]
-
-    #! Assign inputs to global variables.
-    #Cs = Clim_sens
-    #Q10 = Soil_resp
-    #Beta = Carb_fert
-    #Eta = Therm_diff
 end
 
-function timestep(p::ccmpar, v::ccmvar, t::Int)
-#  =========================================================================
-# |  Carbon Cycle Model, single time step
-# |
-# |  Input parameters:
-# |     t:      time index
-# |     temp:   temperature forcing [K]
-# |     CO2_emissions:  [GtC/yr]
-# |
-# |  Optional output:
-# |     diagnostic: array of model variables
-#  =========================================================================
-      
-#      real(DP) :: fracinoc
-     
+function timestep(p::ccmpar, v::ccmvar, t::Int)         
     Q10temp = p.Q10^(p.temp[t]/10.0)
 
     # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
@@ -194,8 +111,7 @@ function timestep(p::ccmpar, v::ccmvar, t::Int)
         v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
     end
 
-    netemissions = p.CO2_emissions[t] + v.landflux[t]
-	   
+    netemissions = p.CO2_emissions[t] + v.landflux[t]	   
 
     # Find fracinoc using the ocean anomaly table.
     fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
@@ -214,28 +130,22 @@ function timestep(p::ccmpar, v::ccmvar, t::Int)
     # Compute flux into ocean
     v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
     v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
-
-    #emissions(t) = CO2_emissions
 end
 
 function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
-    #  =========================================================================
-    # |  A simple linear 2D interpolation over the ocean anomaly table to find  |
-    # |  the fracinoc variable.                                                 |
-    #  =========================================================================
-
-    #integer(i4b) :: templox, temphix, emislox, emishix 
-    #real(DP) :: tempx, emisx, FIO_tlo, FIO_thi
+    # A simple linear 2D interpolation over the ocean anomaly table to find
+    # the fracinoc variable.
+    
     ATsize = size(anomtable)
 
     # Upper and lower bound indices (integers).
-     templox::Int = min(max(ifloor(ref_temp*10.0+10.0)+1,1),ATsize[1])
-     temphix::Int = max(min(iceil(ref_temp*10.0+10.0)+1,ATsize[1]),1)
-     emislox::Int = min(max(ifloor((ref_emis)/2.0)+1,1),ATsize[2])
-     emishix::Int = max(min(iceil((ref_emis)/2.0)+1,ATsize[2]),1)
+    templox::Int = min(max(ifloor(ref_temp*10.0+10.0)+1,1),ATsize[1])
+    temphix::Int = max(min(iceil(ref_temp*10.0+10.0)+1,ATsize[1]),1)
+    emislox::Int = min(max(ifloor((ref_emis)/2.0)+1,1),ATsize[2])
+    emishix::Int = max(min(iceil((ref_emis)/2.0)+1,ATsize[2]),1)
     # Target indices (reals).
-     tempx::Float64 = (ref_temp*10.0+10.0)+1.0
-     emisx::Float64 = ((ref_emis)/2.0)+1.0
+    tempx::Float64 = (ref_temp*10.0+10.0)+1.0
+    emisx::Float64 = ((ref_emis)/2.0)+1.0
 
     # First interpolate anomtable in the emission direction.
     if emislox == emishix

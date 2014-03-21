@@ -1,76 +1,59 @@
-#!  DOECLIM:  Diffusion Ocean Energy balance CLIMate model
-#!
-#!  Copyright (C) 2007 E. Kriegler
-#!
-#!  This program is free software; you can redistribute it and/or modify
-#!  it under the terms of the GNU General Public License as published by
-#!  the Free Software Foundation; either version 2 of the License, or
-#!  (at your option) any later version.
-#!
-#!  This program is distributed in the hope that it will be useful,
-#!  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#!  GNU General Public License for more details.
-#!
-#!  You should have received a copy of the GNU General Public License
-#!  along with this program; if not, write to the Free Software
-#!  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-#!
-#!------------------------------------------------------------------------------
-#! Simple climate model DOECLIM
-#!
-#! calculates sea surface and land air temperature response to radiative forcing
-#! based on an energy balance model with 1-D diffusion ocean
-#!
-#! Constructed by Elmar Kriegler (EK),
-#! Potsdam Institute for Climate Impact Research
-#! Date: 06.02.2005
-#!
-#! References for the historical forcing values can be found in (Reference EK05):
-#! Kriegler, E (2005) Imprecise probability analysis for integrated assessment
-#! of climate change. Ph.D. thesis. University of Potsdam, 256 pp.
-#! opus.kobv.de/ubp/volltexte/2005/561/
-#!
-#! Model equations are described in EK05 and (Reference TK07):
-#! Tanaka, K, Kriegler, E, Bruckner, T, Hooss, G, Knorr, W, Raddatz, T (2007)
-#! Aggregated carbon cycle, atmospheric chemistry, and climate model (ACC2):
-#! Description of the forward and inverse modes, Reports on Earth System Science ! 40/2007,
-#! Max Planck Institute for Meteorology, Hamburg, 199 pp.
-#! www.mpimet.mpg.de/fileadmin/publikationen/Reports/BzE_40.pdf
-#!
-#!==============================================================================
-#!
-#! Updates:
-#! 22.05.2007 Hammer-Hollingsworth numerical correction included (EK)
-#! 23.05.2007 Ocean heat uptake added (EK)
-#! 12.02.2008 Translated to Fortran90 (Marlos Goes <mpg14@psu.edu>)
-#! 15.08.2009 Written as Fortran90 module (Brian Tuttle <btuttle@psu.edu>)
-#!  
-#!==============================================================================
-#!
-#! Global Parameters:
-#!   ak      slope coeff. for land-sea heat exchange
-#!   bk      inters. coeff. for land-sea heat exch.
-#!   bsi     marine air warming enhancement
-#!   cal     heat cap. of land-troposph. system
-#!   cas     heat cap. of ocean ML-troposph.
-#!   csw     specific heat capacity of 1m^3 seawater [Wa/m^3/K]
-#!   deltat  time step size [years]
-#!   flnd    land fraction
-#!   fso     ocean frac. area below 60m
-#!   kcon    conversion factor [cm2/s->m2/a]
-#!   q2co    2xCo2 forcing increase [W/m^2]
-#!   rlam    clim sens. over land enhancement
-#!   zbot    depth of interior ocean
-#!   
-#!   temp_landair:       land air temperature anomaly (K)
-#!   temp_sst:           sea surface temperature anomaly (K)
-#!   heat_mixed:         mixed layer heat anomaly (10^22 J)
-#!   heat_interior:      interior ocean heat anomaly (10^22 J)
-#!   heatflux_mixed:     heat uptake of the mixed layer (W/m^2)
-#!   heatflux_interior:  heat uptake of the interior ocean (W/m^2)
-#!
-#!==============================================================================
+#  DOECLIM:  Diffusion Ocean Energy balance CLIMate model
+#------------------------------------------------------------------------------
+# Simple climate model DOECLIM
+#
+# calculates sea surface and land air temperature response to radiative forcing
+# based on an energy balance model with 1-D diffusion ocean
+#
+# Constructed by Elmar Kriegler (EK),
+# Potsdam Institute for Climate Impact Research
+# Date: 06.02.2005
+#
+# References for the historical forcing values can be found in (Reference EK05):
+# Kriegler, E (2005) Imprecise probability analysis for integrated assessment
+# of climate change. Ph.D. thesis. University of Potsdam, 256 pp.
+# opus.kobv.de/ubp/volltexte/2005/561/
+#
+# Model equations are described in EK05 and (Reference TK07):
+# Tanaka, K, Kriegler, E, Bruckner, T, Hooss, G, Knorr, W, Raddatz, T (2007)
+# Aggregated carbon cycle, atmospheric chemistry, and climate model (ACC2):
+# Description of the forward and inverse modes, Reports on Earth System Science ! 40/2007,
+# Max Planck Institute for Meteorology, Hamburg, 199 pp.
+# www.mpimet.mpg.de/fileadmin/publikationen/Reports/BzE_40.pdf
+#
+#==============================================================================
+#
+# Updates:
+# 22.05.2007 Hammer-Hollingsworth numerical correction included (EK)
+# 23.05.2007 Ocean heat uptake added (EK)
+# 12.02.2008 Translated to Fortran90 (Marlos Goes <mpg14@psu.edu>)
+# 15.08.2009 Written as Fortran90 module (Brian Tuttle <btuttle@psu.edu>)
+#  
+#==============================================================================
+#
+# Global Parameters:
+#   ak      slope coeff. for land-sea heat exchange
+#   bk      inters. coeff. for land-sea heat exch.
+#   bsi     marine air warming enhancement
+#   cal     heat cap. of land-troposph. system
+#   cas     heat cap. of ocean ML-troposph.
+#   csw     specific heat capacity of 1m^3 seawater [Wa/m^3/K]
+#   deltat  time step size [years]
+#   flnd    land fraction
+#   fso     ocean frac. area below 60m
+#   kcon    conversion factor [cm2/s->m2/a]
+#   q2co    2xCo2 forcing increase [W/m^2]
+#   rlam    clim sens. over land enhancement
+#   zbot    depth of interior ocean
+#   
+#   temp_landair:       land air temperature anomaly (K)
+#   temp_sst:           sea surface temperature anomaly (K)
+#   heat_mixed:         mixed layer heat anomaly (10^22 J)
+#   heat_interior:      interior ocean heat anomaly (10^22 J)
+#   heatflux_mixed:     heat uptake of the mixed layer (W/m^2)
+#   heatflux_interior:  heat uptake of the interior ocean (W/m^2)
+#
+#==============================================================================
 module doeclim
 
 const ak   = 0.31
@@ -86,13 +69,15 @@ const q2co = 3.7
 const rlam = 1.43
 const zbot = 4000
 const earth_area = 5100656e8      # [m^2]
-const secs_per_Year = 31556926
+const secs_per_Year = 31556926.0
 
 type doeclimpar
 	nsteps::Int
 	deltat::Float64
-	t2co::Float64
-	kappa::Float64
+	# climate sensitivity to 2xCO2 (K); default = 3
+	t2co::Float64              
+	# vertical ocean diffusivity (cm^2 s^-1); default = 0.55
+	kappa::Float64             
 	forcing::Vector{Float64}
 end
 
@@ -115,6 +100,17 @@ type doeclimvar
 	taubot::Float64
 	powtoheat::Float64
 
+	KT0::Vector{Float64}
+	KTA1::Vector{Float64}
+	KTB1::Vector{Float64}
+	KTA2::Vector{Float64}
+	KTB2::Vector{Float64}
+	KTA3::Vector{Float64}
+	KTB3::Vector{Float64}
+
+	Cdoe::Matrix{Float64}
+	Baux::Matrix{Float64}
+
 	function doeclimvar(p::doeclimpar)
 		vars = new(
 			zeros(p.nsteps),
@@ -133,32 +129,21 @@ type doeclimvar
       		0,
       		0,
       		0,
-      		0)
+      		0,
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(2,2),
+      		zeros(2,2))
     	return vars
   	end
 end
 
 function init(p::doeclimpar, v::doeclimvar)
-#  =========================================================================
-# |  Initialize variables for DOECLIM.                                      |
-# |                                                                         |
-# |  Input parameters:                                                      |
-# |     t2co:   climate sensitivity to 2xCO2 (K); default = 3               |
-# |     kappa:  vertical ocean diffusivity (cm^2 s^-1); default = 0.55      |
-# |     nsteps: number of steps (length of forcing and response vectors)    |
-# |                                                                         |
-#  =========================================================================
-	KT0 = Array(Float64,p.nsteps)
-	KTA1 = Array(Float64,p.nsteps)
-	KTB1 = Array(Float64,p.nsteps)
-	KTA2 = Array(Float64,p.nsteps)
-	KTB2 = Array(Float64,p.nsteps)
-	KTA3 = Array(Float64,p.nsteps)
-	KTB3 = Array(Float64,p.nsteps)
-
-	Cdoe = Array(Float64, 2, 2)
-	Baux = Array(Float64, 2, 2)
-
 	# DEPENDENT MODEL PARAMETERS
 	ocean_area = (1.0-flnd)*earth_area
 
@@ -210,81 +195,76 @@ function init(p::doeclimpar, v::doeclimvar)
 
 	# Zeroth Order
 
-    KT0[p.nsteps] = 4-2*sqrt(2.)
+    v.KT0[p.nsteps] = 4-2*sqrt(2.)
 
 	# First Order
 
-    KTA1[p.nsteps] = -8*exp(-v.taubot/p.deltat) + 4*sqrt(2.)*exp(-0.5*v.taubot/p.deltat)
+    v.KTA1[p.nsteps] = -8*exp(-v.taubot/p.deltat) + 4*sqrt(2.)*exp(-0.5*v.taubot/p.deltat)
 
-    KTB1[p.nsteps] = 4*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(0.5*v.taubot/p.deltat)) - 2*erf(sqrt(v.taubot/p.deltat)))
+    v.KTB1[p.nsteps] = 4*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(0.5*v.taubot/p.deltat)) - 2*erf(sqrt(v.taubot/p.deltat)))
 
 	# Second order
 
-    KTA2[p.nsteps] =  8*exp(-4.*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2.*v.taubot/p.deltat)
+    v.KTA2[p.nsteps] =  8*exp(-4.*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2.*v.taubot/p.deltat)
 
-	KTB2[p.nsteps] = -8*sqrt(pi*v.taubot/p.deltat) * (1.+ erf(sqrt(2.*v.taubot/p.deltat)) - 2.*erf(2.*sqrt(v.taubot/p.deltat)) )
+	v.KTB2[p.nsteps] = -8*sqrt(pi*v.taubot/p.deltat) * (1.+ erf(sqrt(2.*v.taubot/p.deltat)) - 2.*erf(2.*sqrt(v.taubot/p.deltat)) )
 
 	# Third Order
 
-    KTA3[p.nsteps] = -8.*exp(-9.*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
+    v.KTA3[p.nsteps] = -8.*exp(-9.*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
 
-    KTB3[p.nsteps] = 12.*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2.*erf(3.*sqrt(v.taubot/p.deltat)) )
+    v.KTB3[p.nsteps] = 12.*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2.*erf(3.*sqrt(v.taubot/p.deltat)) )
 
 	# Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
 	# Switched on (To switch off, comment out lines below)
-    Cdoe[1,1] = 1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl
-    Cdoe[1,2] = -bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl
-    Cdoe[2,1] = -bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl
-    Cdoe[2,2] =  1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl
-    Cdoe = Cdoe*(p.deltat^2/12.)
+    v.Cdoe[1,1] = 1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
+    v.Cdoe[1,2] = -bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl*(p.deltat^2/12.)
+    v.Cdoe[2,1] = -bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl*(p.deltat^2/12.)
+    v.Cdoe[2,2] =  1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
 
-	#%------------------------------------------------------------------
-	#% Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
-	#% T = (TL,TO)
-	#% (Equation A.27, EK05, or Equations 2.3.24 and 2.3.27, TK07)
-    Baux[1,1] = 1. + p.deltat/(2.*v.taucfl) + p.deltat/(2.*v.taukls)
-    Baux[1,2] = -p.deltat/(2.*v.taukls)*bsi
-    Baux[2,1] = -p.deltat/(2.*v.tauksl)
-    Baux[2,2] = 1. + p.deltat/(2.*v.taucfs) + p.deltat/(2.*v.tauksl)*bsi + 2.*fso*sqrt(p.deltat/v.taudif)
-    Baux = Baux+Cdoe
+	# Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
+	# T = (TL,TO)
+	# (Equation A.27, EK05, or Equations 2.3.24 and 2.3.27, TK07)
+    v.Baux[1,1] = 1. + p.deltat/(2.*v.taucfl) + p.deltat/(2.*v.taukls)+v.Cdoe[1,1]
+    v.Baux[1,2] = -p.deltat/(2.*v.taukls)*bsi+v.Cdoe[1,2]
+    v.Baux[2,1] = -p.deltat/(2.*v.tauksl)+v.Cdoe[2,1]
+    v.Baux[2,2] = 1. + p.deltat/(2.*v.taucfs) + p.deltat/(2.*v.tauksl)*bsi + 2.*fso*sqrt(p.deltat/v.taudif)+v.Cdoe[2,2]
 
-	# Calculate inverse of B
-    #call migs(Baux,2,IBaux)
-    #IB[:,:]=IBaux(:,:)
-    v.IB[:,:]=inv(Baux)[:,:]
+    v.IB=inv(v.Baux)
 
 	for i = 1:p.nsteps-1
 
 		# Zeroth Order
 
-      	KT0[i] = 4*sqrt(float64(p.nsteps+1-i)) - 2.*sqrt(float64(p.nsteps+2-i)) - 2*sqrt(float64(p.nsteps-i))
+      	v.KT0[i] = 4*sqrt(float64(p.nsteps+1-i)) - 2.*sqrt(float64(p.nsteps+2-i)) - 2*sqrt(float64(p.nsteps-i))
 
 		# First Order
 
-		KTA1[i] = -8*sqrt(float64(p.nsteps+1-i)) * exp(-v.taubot/p.deltat/(p.nsteps+1-i)) + 4*sqrt(float64(p.nsteps+2-i)) *exp(-v.taubot/p.deltat/(p.nsteps+2-i)) + 4*sqrt(float64(p.nsteps-i)) *exp(-v.taubot/p.deltat/(p.nsteps-i))
+		v.KTA1[i] = -8*sqrt(float64(p.nsteps+1-i)) * exp(-v.taubot/p.deltat/(p.nsteps+1-i)) + 4*sqrt(float64(p.nsteps+2-i)) *exp(-v.taubot/p.deltat/(p.nsteps+2-i)) + 4*sqrt(float64(p.nsteps-i)) *exp(-v.taubot/p.deltat/(p.nsteps-i))
 
-    	KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(p.nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(p.nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(p.nsteps+1-i))) )
+    	v.KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(p.nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(p.nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(p.nsteps+1-i))) )
 
 		# Second Order
 
-		KTA2[i] =  8.*sqrt(float64(p.nsteps+1-i)) * exp(-4.*v.taubot/p.deltat/(p.nsteps+1-i))- 4.*sqrt(float64(p.nsteps+2-i))*exp(-4.*v.taubot/p.deltat/(p.nsteps+2-i))- 4.*sqrt(float64(p.nsteps-i)) * exp(-4.*v.taubot/p.deltat/(p.nsteps-i))
+		v.KTA2[i] =  8.*sqrt(float64(p.nsteps+1-i)) * exp(-4.*v.taubot/p.deltat/(p.nsteps+1-i))- 4.*sqrt(float64(p.nsteps+2-i))*exp(-4.*v.taubot/p.deltat/(p.nsteps+2-i))- 4.*sqrt(float64(p.nsteps-i)) * exp(-4.*v.taubot/p.deltat/(p.nsteps-i))
 
-		KTB2[i] = -8.*sqrt(pi*v.taubot/p.deltat) * (erf(2.*sqrt(v.taubot/p.deltat/(float64(p.nsteps-i)))) + erf(2.*sqrt(v.taubot/p.deltat/float64(p.nsteps+2-i))) -       2.*erf(2.*sqrt(v.taubot/p.deltat/float64(p.nsteps+1-i))) )
+		v.KTB2[i] = -8.*sqrt(pi*v.taubot/p.deltat) * (erf(2.*sqrt(v.taubot/p.deltat/(float64(p.nsteps-i)))) + erf(2.*sqrt(v.taubot/p.deltat/float64(p.nsteps+2-i))) -       2.*erf(2.*sqrt(v.taubot/p.deltat/float64(p.nsteps+1-i))) )
 
 		# Third Order
 
-		KTA3[i] = -8.*sqrt(float64(p.nsteps+1-i)) *exp(-9.*v.taubot/p.deltat/(p.nsteps+1.-i)) + 4.*sqrt(float64(p.nsteps+2-i))*exp(-9.*v.taubot/p.deltat/(p.nsteps+2.-i)) + 4.*sqrt(float64(p.nsteps-i))*exp(-9.*v.taubot/p.deltat/(p.nsteps-i))
+		v.KTA3[i] = -8.*sqrt(float64(p.nsteps+1-i)) *exp(-9.*v.taubot/p.deltat/(p.nsteps+1.-i)) + 4.*sqrt(float64(p.nsteps+2-i))*exp(-9.*v.taubot/p.deltat/(p.nsteps+2.-i)) + 4.*sqrt(float64(p.nsteps-i))*exp(-9.*v.taubot/p.deltat/(p.nsteps-i))
 
-		KTB3[i] = 12.*sqrt(pi*v.taubot/p.deltat) * (erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps-i))) + erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps+2-i))) - 2.*erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps+1-i))) )
+		v.KTB3[i] = 12.*sqrt(pi*v.taubot/p.deltat) * (erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps-i))) + erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps+2-i))) - 2.*erf(3.*sqrt(v.taubot/p.deltat/(p.nsteps+1-i))) )
 	end
 
-	v.Ker = KT0+KTA1+KTB1+KTA2+KTB2+KTA3+KTB3
+	for i=1:p.nsteps
+		v.Ker[i] = v.KT0[i]+v.KTA1[i]+v.KTB1[i]+v.KTA2[i]+v.KTB2[i]+v.KTA3[i]+v.KTB3[i]
+	end
 
-	v.Adoe[1,1] = 1 - p.deltat/(2.*v.taucfl) - p.deltat/(2.*v.taukls)
-    v.Adoe[1,2] =  p.deltat/(2.*v.taukls)*bsi
-    v.Adoe[2,1] =  p.deltat/(2.*v.tauksl)
-    v.Adoe[2,2] = 1 - p.deltat/(2.*v.taucfs) - p.deltat/(2.*v.tauksl)*bsi + v.Ker[p.nsteps]*fso*sqrt(p.deltat/v.taudif)    
-    v.Adoe=v.Adoe+Cdoe
+	v.Adoe[1,1] = 1 - p.deltat/(2.*v.taucfl) - p.deltat/(2.*v.taukls) + v.Cdoe[1,1]
+    v.Adoe[1,2] =  p.deltat/(2.*v.taukls)*bsi + v.Cdoe[1,2]
+    v.Adoe[2,1] =  p.deltat/(2.*v.tauksl) + v.Cdoe[2,1]
+    v.Adoe[2,2] = 1 - p.deltat/(2.*v.taucfs) - p.deltat/(2.*v.tauksl)*bsi + v.Ker[p.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
 end
 
 function timestep(p::doeclimpar, s::doeclimvar, n::Int)
