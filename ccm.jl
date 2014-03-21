@@ -223,9 +223,9 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     ATsize = size(anomtable)
 
     # Upper and lower bound indices (integers).
-     templox::Int = min(max(floor(ref_temp*10.0+10.0)+1,1),ATsize[1])
+     templox::Int = min(max(ifloor(ref_temp*10.0+10.0)+1,1),ATsize[1])
      temphix::Int = max(min(iceil(ref_temp*10.0+10.0)+1,ATsize[1]),1)
-     emislox::Int = min(max(floor((ref_emis)/2.0)+1,1),ATsize[2])
+     emislox::Int = min(max(ifloor((ref_emis)/2.0)+1,1),ATsize[2])
      emishix::Int = max(min(iceil((ref_emis)/2.0)+1,ATsize[2]),1)
     # Target indices (reals).
      tempx::Float64 = (ref_temp*10.0+10.0)+1.0
@@ -250,17 +250,4 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     return frac_in_ocean
 end
 
-end
-
-xpar = ccm.ccmpar(200,1,3,1.126598,0.2916273,172.2809,zeros(200),zeros(200),zeros(100,10000))
-xpar.temp[:] = .7
-xpar.CO2_emissions[:] = 7
-xpar.anomtable[:,:] = 0.0
-
-
-xvar = ccm.ccmvar(xpar)
-ccm.init(xpar, xvar)
-
-for t=1:200    
-    ccm.timestep(xpar, xvar, t)
 end

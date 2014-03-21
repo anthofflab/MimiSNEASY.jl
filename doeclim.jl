@@ -115,16 +115,16 @@ type doeclimvar
 	taubot::Float64
 	powtoheat::Float64
 
-	function doeclimvar(timesteps)
+	function doeclimvar(p::doeclimpar)
 		vars = new(
-			zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
-      		zeros(timesteps),
+			zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
+      		zeros(p.nsteps),
       		zeros(2,2),
       		zeros(2,2),
       		0,
@@ -415,14 +415,4 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
 	end
 
 end
-end
-
-xpar = doeclim.doeclimpar(200,1,3,0.5,Array(Float64,200))
-xpar.forcing[:] = 3.7
-
-xvar = doeclim.doeclimvar(200)
-doeclim.init(xpar, xvar)
-for t=1:200
-	doeclim.timestep(xpar, xvar, t)
-	println(xvar.temp[t])
 end
