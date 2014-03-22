@@ -1,12 +1,21 @@
 module radforc
+using Iam
 
-type radforcpar
+type radforcpar <: Iam.ComponentParameters
     nsteps::Int
+    deltat::Float64
     atmco2::Vector{Float64}
     other_forcing::Vector{Float64}
+
+    function radforcpar(nsteps,deltat)
+    	p = new()
+    	p.nsteps=nsteps
+    	p.deltat=deltat
+    	return p
+    end
 end
 
-type radforcvar
+type radforcvar <: Iam.ComponentVariables
 	rf::Vector{Float64}
 
     function radforcvar(p::radforcpar)

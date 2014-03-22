@@ -28,6 +28,7 @@
 #------------------------------------------------------------------------------
 
 module ccm
+using Iam
 
 # Define factors used in the calculation.
 const r3f = 45.0 / 120.0
@@ -45,7 +46,7 @@ const n3 = 9.04
 const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
-type ccmpar
+type ccmpar  <: Iam.ComponentParameters
     nsteps::Int
     deltat::Float64
     Clim_sens::Float64
@@ -55,9 +56,16 @@ type ccmpar
     temp::Vector{Float64}
     CO2_emissions::Vector{Float64}
     anomtable::Array{Float64,2}
+
+    function ccmpar(nsteps,deltat)
+        p = new()
+        p.nsteps=nsteps
+        p.deltat=deltat
+        return p
+    end
 end
 
-type ccmvar
+type ccmvar <: Iam.ComponentVariables
     tpools::Array{Float64,2}
     ocanom::Array{Float64,2}
     atmco2::Vector{Float64}

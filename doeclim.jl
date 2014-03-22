@@ -55,6 +55,7 @@
 #
 #==============================================================================
 module doeclim
+using Iam
 
 const ak   = 0.31
 const bk   = 1.59
@@ -71,7 +72,7 @@ const zbot = 4000
 const earth_area = 5100656e8      # [m^2]
 const secs_per_Year = 31556926.0
 
-type doeclimpar
+type doeclimpar  <: Iam.ComponentParameters
 	nsteps::Int
 	deltat::Float64
 	# climate sensitivity to 2xCO2 (K); default = 3
@@ -79,9 +80,16 @@ type doeclimpar
 	# vertical ocean diffusivity (cm^2 s^-1); default = 0.55
 	kappa::Float64             
 	forcing::Vector{Float64}
+
+	function doeclimpar(nsteps,deltat)
+		p = new()
+		p.nsteps=nsteps
+		p.deltat=deltat
+		return p
+	end
 end
 
-type doeclimvar
+type doeclimvar <: Iam.ComponentVariables
 	temp::Vector{Float64}
 	temp_landair::Vector{Float64}
 	temp_sst::Vector{Float64}
