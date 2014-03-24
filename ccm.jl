@@ -28,7 +28,7 @@
 #------------------------------------------------------------------------------
 
 module ccm
-using Iam
+using Iamf
 
 # Define factors used in the calculation.
 const r3f = 45.0 / 120.0
@@ -46,7 +46,7 @@ const n3 = 9.04
 const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
-type ccmpar  <: Iam.ComponentParameters
+type ccmpar  <: ComponentParameters
     nsteps::Int
     deltat::Float64
     Clim_sens::Float64
@@ -65,7 +65,7 @@ type ccmpar  <: Iam.ComponentParameters
     end
 end
 
-type ccmvar <: Iam.ComponentVariables
+type ccmvar <: ComponentVariables
     tpools::Array{Float64,2}
     ocanom::Array{Float64,2}
     atmco2::Vector{Float64}
@@ -87,7 +87,9 @@ type ccmvar <: Iam.ComponentVariables
     end
 end
 
-function init(p::ccmpar, v::ccmvar)
+end
+
+function init(p::ccm.ccmpar, v::ccm.ccmvar)
     v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
     v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
     v.tpools[1,3] = 120.0     # Detritus [GtC]
@@ -96,7 +98,7 @@ function init(p::ccmpar, v::ccmvar)
     v.atmco2[1] = 285.2        # [ppm]
 end
 
-function timestep(p::ccmpar, v::ccmvar, t::Int)         
+function timestep(p::ccm.ccmpar, v::ccm.ccmvar, t::Int)         
     Q10temp = p.Q10^(p.temp[t]/10.0)
 
     # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
@@ -172,6 +174,4 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     end
 
     return frac_in_ocean
-end
-
 end

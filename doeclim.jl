@@ -55,7 +55,7 @@
 #
 #==============================================================================
 module doeclim
-using Iam
+using Iamf
 
 const ak   = 0.31
 const bk   = 1.59
@@ -72,7 +72,7 @@ const zbot = 4000
 const earth_area = 5100656e8      # [m^2]
 const secs_per_Year = 31556926.0
 
-type doeclimpar  <: Iam.ComponentParameters
+type doeclimpar  <: ComponentParameters
 	nsteps::Int
 	deltat::Float64
 	# climate sensitivity to 2xCO2 (K); default = 3
@@ -89,7 +89,7 @@ type doeclimpar  <: Iam.ComponentParameters
 	end
 end
 
-type doeclimvar <: Iam.ComponentVariables
+type doeclimvar <: ComponentVariables
 	temp::Vector{Float64}
 	temp_landair::Vector{Float64}
 	temp_sst::Vector{Float64}
@@ -151,15 +151,17 @@ type doeclimvar <: Iam.ComponentVariables
   	end
 end
 
-function init(p::doeclimpar, v::doeclimvar)
+end
+
+function init(p::doeclim.doeclimpar, v::doeclim.doeclimvar)
 	# DEPENDENT MODEL PARAMETERS
-	ocean_area = (1.0-flnd)*earth_area
+	ocean_area = (1.0-doeclim.flnd)*earth_area
 
 	v.powtoheat = ocean_area*secs_per_Year / 1e22
 
-	cnum = rlam*flnd + bsi * (1.0-flnd)
+	cnum = rlam*doeclim.flnd + bsi * (1.0-doeclim.flnd)
 
-	cden = rlam * flnd - ak *(rlam-bsi)
+	cden = rlam * doeclim.flnd - ak *(rlam-bsi)
 
 	# vertical diffusivity in [m^2/a]
 
@@ -167,15 +169,15 @@ function init(p::doeclimpar, v::doeclimvar)
 
 	# climate feedback strength over land
 
-    cfl = flnd *cnum/cden*q2co/p.t2co-bk*(rlam-bsi)/cden
+    cfl = doeclim.flnd *cnum/cden*q2co/p.t2co-bk*(rlam-bsi)/cden
 
 	# climate feedback strength over ocean
 
-    cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi)) * cnum / cden * q2co / p.t2co + rlam * flnd / (1.-flnd) * bk * (rlam - bsi) / cden
+    cfs = (rlam * doeclim.flnd - ak / (1.-doeclim.flnd) * (rlam-bsi)) * cnum / cden * q2co / p.t2co + rlam * doeclim.flnd / (1.-doeclim.flnd) * bk * (rlam - bsi) / cden
 
 	# land-sea heat exchange coefficient
 
-    kls = bk * rlam * flnd / cden - ak * flnd * cnum / cden * q2co / p.t2co
+    kls = bk * rlam * doeclim.flnd / cden - ak * doeclim.flnd * cnum / cden * q2co / p.t2co
 
 	# interior ocean warming time scale
 
@@ -195,11 +197,11 @@ function init(p::doeclimpar, v::doeclimvar)
 
 	# sea-land heat exchange time scale
 
-    v.tauksl  = (1.-flnd) * cas / kls
+    v.tauksl  = (1.-doeclim.flnd) * cas / kls
 
 	# land-sea heat exchange time scale
 
-    v.taukls  = flnd * cal / kls
+    v.taukls  = doeclim.flnd * cal / kls
 
 	# Zeroth Order
 
@@ -275,7 +277,7 @@ function init(p::doeclimpar, v::doeclimvar)
     v.Adoe[2,2] = 1 - p.deltat/(2.*v.taucfs) - p.deltat/(2.*v.tauksl)*bsi + v.Ker[p.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
 end
 
-function timestep(p::doeclimpar, s::doeclimvar, n::Int)
+function timestep(p::doeclim.doeclimpar, s::doeclim.doeclimvar, n::Int)
 #  ==========================================================================
 # | Simple climate model DOECLIM
 # |
@@ -365,7 +367,7 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
 		DTE2[2] = s.IB[2,1]*(DQ1 +DTEAUX1)+s.IB[2,2]*(DQ2+DTEAUX2)
 	end
 	
-	s.temp[n] = flnd*s.temp_landair[n] + (1.-flnd)*bsi*s.temp_sst[n]
+	s.temp[n] = doeclim.flnd*s.temp_landair[n] + (1.-doeclim.flnd)*bsi*s.temp_sst[n]
 
 	# Calculate ocean heat uptake [W/m^2]
 	# heatflux(n) captures in the heat flux in the period between n-1 and n
@@ -394,5 +396,4 @@ function timestep(p::doeclimpar, s::doeclimvar, n::Int)
 		s.heat_interior[1] = 0.0
 	end
 
-end
 end

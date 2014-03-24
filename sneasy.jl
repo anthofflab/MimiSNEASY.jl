@@ -1,4 +1,4 @@
-using Iam
+using Iamf
 include("doeclim.jl")
 include("ccm.jl")
 include("radforc.jl")
@@ -45,9 +45,9 @@ function getsneasy()
 	parccm.temp = vardoeclim.temp
 	parradforc.atmco2 = varccm.atmco2
 
-	c1 = Iam.ComponentInstance(parradforc,varradforc)
-	c2 = Iam.ComponentInstance(pardoeclim,vardoeclim)
-	c3 = Iam.ComponentInstance(parccm,varccm)
+	c1 = ComponentInstance(parradforc,varradforc)
+	c2 = ComponentInstance(pardoeclim,vardoeclim)
+	c3 = ComponentInstance(parccm,varccm)
 
 	comps = [c1,c2,c3]
 	return comps
