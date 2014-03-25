@@ -7,13 +7,13 @@ type radforcpar
     other_forcing::Vector{Float64}
 
     function radforcpar(nsteps::Int)
-    	p = new()
-    	return p
+        p = new()
+        return p
     end
 end
 
 type radforcvar
-	rf::Vector{Float64}
+    rf::Vector{Float64}
 
     function radforcvar(nsteps::Int)
         vars = new(zeros(nsteps))

@@ -127,8 +127,8 @@ function timestep(s::ccm, t::Int)
     resp_h = resp3+resp4
 
     v.landflux[t] = resp_h - npp
-	
-    # Set terrestrial pool sizes for next timestep	
+    
+    # Set terrestrial pool sizes for next timestep  
     v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
     v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
     v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
@@ -138,7 +138,7 @@ function timestep(s::ccm, t::Int)
         v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
     end
 
-    netemissions = p.CO2_emissions[t] + v.landflux[t]	   
+    netemissions = p.CO2_emissions[t] + v.landflux[t]      
 
     # Find fracinoc using the ocean anomaly table.
     fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
