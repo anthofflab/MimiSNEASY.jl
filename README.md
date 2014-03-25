@@ -15,3 +15,5 @@ Also make sure you have the latest version by periodically calling
 ````jl
 Pkg.update()
 ````
+
+To run IJulia files make sure IJulia is properly installed (https://github.com/JuliaLang/IJulia.jl)
