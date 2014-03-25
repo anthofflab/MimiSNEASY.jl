@@ -8,9 +8,9 @@ function getsneasy(nsteps=566)
 	# Read data
 	# ---------------------------------------------
 
-	f_anomtable = readdlm("anomtable.txt")
-	f_emissions = readdlm("emis_data_sep09.txt")
-	f_nonco2forcing = readdlm("non_CO2_forcing.txt")
+	f_anomtable = readdlm("data/anomtable.txt")
+	f_emissions = readdlm("data/emis_data_sep09.txt")
+	f_nonco2forcing = readdlm("data/non_CO2_forcing.txt")
 
 	# Timesteps
 	deltat = 1.0
