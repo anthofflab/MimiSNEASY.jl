@@ -27,8 +27,8 @@
 #               computed temperature forcing.
 #------------------------------------------------------------------------------
 
-module ccm
-using Iamf
+module ccmcomponent
+using IAMF
 
 # Define factors used in the calculation.
 const r3f = 45.0 / 120.0
@@ -46,8 +46,7 @@ const n3 = 9.04
 const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
-type ccmpar  <: ComponentParameters
-    nsteps::Int
+type ccmpar
     deltat::Float64
     Clim_sens::Float64
     Q10::Float64
@@ -57,15 +56,13 @@ type ccmpar  <: ComponentParameters
     CO2_emissions::Vector{Float64}
     anomtable::Array{Float64,2}
 
-    function ccmpar(nsteps,deltat)
+    function ccmpar(nsteps)
         p = new()
-        p.nsteps=nsteps
-        p.deltat=deltat
         return p
     end
 end
 
-type ccmvar <: ComponentVariables
+type ccmvar
     tpools::Array{Float64,2}
     ocanom::Array{Float64,2}
     atmco2::Vector{Float64}
@@ -74,22 +71,39 @@ type ccmvar <: ComponentVariables
     Ftp::Vector{Float64}
     Goc::Vector{Float64}
 
-    function ccmvar(p::ccmpar)
+    function ccmvar(nsteps::Int)
         vars = new(
-            zeros(p.nsteps+1,4),
-            zeros(p.nsteps+1,4),
-            zeros(p.nsteps+1),
-            zeros(p.nsteps),
-            zeros(p.nsteps),
+            zeros(nsteps+1,4),
+            zeros(nsteps+1,4),
+            zeros(nsteps+1),
+            zeros(nsteps),
+            zeros(nsteps),
             zeros(4),
             zeros(4))
         return vars
     end
 end
 
+type ccm <: ComponentState
+    p::ccmpar
+    v::ccmvar
+    nsteps::Int
+
+    function ccm(nsteps)
+        s = new()
+        s.nsteps = nsteps
+        s.p = ccmpar(nsteps)
+        s.v = ccmvar(nsteps)
+        return s
+    end
 end
 
-function init(p::ccm.ccmpar, v::ccm.ccmvar)
+import IAMF.init
+import IAMF.timestep
+
+function init(s::ccm)
+    p = s.p
+    v = s.v
     v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
     v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
     v.tpools[1,3] = 120.0     # Detritus [GtC]
@@ -98,7 +112,10 @@ function init(p::ccm.ccmpar, v::ccm.ccmvar)
     v.atmco2[1] = 285.2        # [ppm]
 end
 
-function timestep(p::ccm.ccmpar, v::ccm.ccmvar, t::Int)         
+function timestep(s::ccm, t::Int)
+    p = s.p
+    v = s.v
+
     Q10temp = p.Q10^(p.temp[t]/10.0)
 
     # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
@@ -174,4 +191,6 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     end
 
     return frac_in_ocean
+end
+
 end

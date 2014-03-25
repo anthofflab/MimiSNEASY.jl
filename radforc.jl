@@ -1,39 +1,50 @@
-module radforc
-using Iamf
+module radforccomponent
+using IAMF
 
-export radforcpar, radforcvar
-
-type radforcpar <: ComponentParameters
-    nsteps::Int
+type radforcpar
     deltat::Float64
     atmco2::Vector{Float64}
     other_forcing::Vector{Float64}
 
-    function radforcpar(nsteps,deltat)
+    function radforcpar(nsteps::Int)
     	p = new()
-    	p.nsteps=nsteps
-    	p.deltat=deltat
     	return p
     end
 end
 
-type radforcvar <: ComponentVariables
+type radforcvar
 	rf::Vector{Float64}
 
-    function radforcvar(p::radforcpar)
-        vars = new(zeros(p.nsteps))
+    function radforcvar(nsteps::Int)
+        vars = new(zeros(nsteps))
         return vars
     end
 end
 
+type radforc <: ComponentState
+    p::radforcpar
+    v::radforcvar
+    nsteps::Int
+
+    function radforc(nsteps)
+        s = new()
+        s.nsteps = nsteps
+        s.p = radforcpar(nsteps)
+        s.v = radforcvar(nsteps)
+        return s
+    end
 end
 
-importall radforc
+import IAMF.init
+import IAMF.timestep
 
-function init(p::radforcpar, v::radforcvar)
-    println("init radforc")
+function init(s::radforc)    
 end
 
-function timestep(p::radforcpar, v::radforcvar, t::Int)
+function timestep(s::radforc, t::Int)
+    v = s.v
+    p = s.p
     v.rf[t] = 3.7 * log(p.atmco2[t]/p.atmco2[1])/log(2.0) + p.other_forcing[t]
+end
+
 end
