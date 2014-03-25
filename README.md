@@ -16,4 +16,4 @@ Also make sure you have the latest version by periodically calling
 Pkg.update()
 ````
 
-To run IJulia files make sure IJulia is properly installed (https://github.com/JuliaLang/IJulia.jl)
+To run the .ipynb files make sure [IJulia](https://github.com/JuliaLang/IJulia.jl) is installed.
