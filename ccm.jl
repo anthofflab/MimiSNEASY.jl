@@ -46,64 +46,28 @@ const n3 = 9.04
 const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
-type ccmpar
-    deltat::Float64
-    Clim_sens::Float64
-    Q10::Float64
-    Beta::Float64
-    Eta::Float64            #default 16.88,   diffusion coeffs [m/yr]
-    temp::Vector{Float64}
-    CO2_emissions::Vector{Float64}
-    anomtable::Array{Float64,2}
+@defcomp ccm begin
+    addParameter(deltat,Float64)
+    addParameter(Clim_sens,Float64)
+    addParameter(Q10,Float64)
+    addParameter(Beta,Float64)
+    addParameter(Eta,Float64) #default 16.88,   diffusion coeffs [m/yr]
+    addParameter(temp,Float64, index=[time])
+    addParameter(CO2_emissions,Float64, index=[time])
+    addParameter(anomtable,Array{Float64,2})
 
-    function ccmpar(nsteps)
-        p = new()
-        return p
-    end
+    addVariable(tpools, Float64, index=[time,4])
+    addVariable(ocanom, Float64, index=[time,4])
+    addVariable(atmco2, Float64, index=[time])
+    addVariable(landflux, Float64, index=[time])
+    addVariable(atm_oc_flux, Float64, index=[time])
+    addVariable(Ftp, Float64, index=[4])
+    addVariable(Goc, Float64, index=[4])
 end
-
-type ccmvar
-    tpools::Array{Float64,2}
-    ocanom::Array{Float64,2}
-    atmco2::Vector{Float64}
-    landflux::Vector{Float64}
-    atm_oc_flux::Vector{Float64}
-    Ftp::Vector{Float64}
-    Goc::Vector{Float64}
-
-    function ccmvar(nsteps::Int)
-        vars = new(
-            zeros(nsteps+1,4),
-            zeros(nsteps+1,4),
-            zeros(nsteps+1),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(4),
-            zeros(4))
-        return vars
-    end
-end
-
-type ccm <: ComponentState
-    p::ccmpar
-    v::ccmvar
-    nsteps::Int
-
-    function ccm(nsteps)
-        s = new()
-        s.nsteps = nsteps
-        s.p = ccmpar(nsteps)
-        s.v = ccmvar(nsteps)
-        return s
-    end
-end
-
-import IAMF.init
-import IAMF.timestep
 
 function init(s::ccm)
-    p = s.p
-    v = s.v
+    p = s.Parameters
+    v = s.Variables
     v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
     v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
     v.tpools[1,3] = 120.0     # Detritus [GtC]
@@ -113,8 +77,8 @@ function init(s::ccm)
 end
 
 function timestep(s::ccm, t::Int)
-    p = s.p
-    v = s.v
+    p = s.Parameters
+    v = s.Variables
 
     Q10temp = p.Q10^(p.temp[t]/10.0)
 
@@ -134,8 +98,10 @@ function timestep(s::ccm, t::Int)
     v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
     v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
       
-    for i=1:4
-        v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
+    if t<s.nsteps
+        for i=1:4
+            v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
+        end
     end
 
     netemissions = p.CO2_emissions[t] + v.landflux[t]      
@@ -150,13 +116,16 @@ function timestep(s::ccm, t::Int)
     v.Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
     v.Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
 
-    for i=1:4
-        v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
-    end
+    if t<s.nsteps
+        for i=1:4
+            v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
+        end
     
-    # Compute flux into ocean
-    v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
-    v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
+        # Compute flux into ocean
+        v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
+
+        v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
+    end
 end
 
 function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)

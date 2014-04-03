@@ -72,102 +72,49 @@ const zbot = 4000
 const earth_area = 5100656e8      # [m^2]
 const secs_per_Year = 31556926.0
 
-type doeclimpar
-    deltat::Float64
+@defcomp doeclim begin
+    addParameter(deltat, Float64)
     # climate sensitivity to 2xCO2 (K); default = 3
-    t2co::Float64              
+    addParameter(t2co,Float64)
     # vertical ocean diffusivity (cm^2 s^-1); default = 0.55
-    kappa::Float64             
-    forcing::Vector{Float64}
+    addParameter(kappa, Float64)
+    addParameter(forcing, Float64, index=[time])
 
-    function doeclimpar(nsteps)
-        p = new()
-        return p
-    end
+    addVariable(temp, Float64, index=[time])
+    addVariable(temp_landair, Float64, index=[time])
+    addVariable(temp_sst, Float64, index=[time])
+    addVariable(heat_mixed, Float64, index=[time])
+    addVariable(heat_interior, Float64, index=[time])
+    addVariable(heatflux_mixed, Float64, index=[time])
+    addVariable(heatflux_interior, Float64, index=[time])
+    addVariable(Ker, Float64, index=[time])
+
+    addVariable(taucfl, Float64)
+    addVariable(taukls, Float64)
+    addVariable(taucfs, Float64)
+    addVariable(tauksl, Float64)
+    addVariable(taudif, Float64)
+    addVariable(taubot, Float64)
+    addVariable(powtoheat, Float64)
+
+    addVariable(IB, Float64, index=[2,2])
+    addVariable(Adoe, Float64, index=[2,2])
+
+    addVariable(KT0, Float64, index=[time])
+    addVariable(KTA1, Float64, index=[time])
+    addVariable(KTB1, Float64, index=[time])
+    addVariable(KTA2, Float64, index=[time])
+    addVariable(KTB2, Float64, index=[time])
+    addVariable(KTA3, Float64, index=[time])
+    addVariable(KTB3, Float64, index=[time])
+
+    addVariable(Cdoe, Float64, index=[2,2])
+    addVariable(Baux, Float64, index=[2,2])
 end
-
-type doeclimvar
-    temp::Vector{Float64}
-    temp_landair::Vector{Float64}
-    temp_sst::Vector{Float64}
-    heat_mixed::Vector{Float64}
-    heat_interior::Vector{Float64}
-    heatflux_mixed::Vector{Float64}
-    heatflux_interior::Vector{Float64}
-    Ker::Vector{Float64}
-    IB::Matrix{Float64}
-    Adoe::Matrix{Float64}
-    taucfl::Float64
-    taukls::Float64
-    taucfs::Float64
-    tauksl::Float64
-    taudif::Float64
-    taubot::Float64
-    powtoheat::Float64
-
-    KT0::Vector{Float64}
-    KTA1::Vector{Float64}
-    KTB1::Vector{Float64}
-    KTA2::Vector{Float64}
-    KTB2::Vector{Float64}
-    KTA3::Vector{Float64}
-    KTB3::Vector{Float64}
-
-    Cdoe::Matrix{Float64}
-    Baux::Matrix{Float64}
-
-    function doeclimvar(nsteps::Int)
-        vars = new(
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(2,2),
-            zeros(2,2),
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(nsteps),
-            zeros(2,2),
-            zeros(2,2))
-        return vars
-    end
-end
-
-type doeclim <: ComponentState
-    p::doeclimpar
-    v::doeclimvar
-    nsteps::Int
-
-    function doeclim(nsteps)
-        s = new()
-        s.nsteps = nsteps
-        s.p = doeclimpar(nsteps)
-        s.v = doeclimvar(nsteps)
-        return s
-    end
-end
-
-import IAMF.init
-import IAMF.timestep
 
 function init(s::doeclim)
-    p = s.p
-    v = s.v
+    p = s.Parameters
+    v = s.Variables
 
     # DEPENDENT MODEL PARAMETERS
     ocean_area = (1.0-flnd)*earth_area
@@ -293,8 +240,8 @@ function init(s::doeclim)
 end
 
 function timestep(s::doeclim, n::Int)
-    p = s.p
-    v = s.v
+    p = s.Parameters
+    v = s.Variables
 #  ==========================================================================
 # | Simple climate model DOECLIM
 # |
