@@ -132,13 +132,14 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     # A simple linear 2D interpolation over the ocean anomaly table to find
     # the fracinoc variable.
     
-    ATsize = size(anomtable)
+    ATsize1 = size(anomtable,1)
+    ATsize2 = size(anomtable,2)
 
     # Upper and lower bound indices (integers).
-    templox::Int = min(max(ifloor(ref_temp*10.0+10.0)+1,1),ATsize[1])
-    temphix::Int = max(min(iceil(ref_temp*10.0+10.0)+1,ATsize[1]),1)
-    emislox::Int = min(max(ifloor((ref_emis)/2.0)+1,1),ATsize[2])
-    emishix::Int = max(min(iceil((ref_emis)/2.0)+1,ATsize[2]),1)
+    templox::Int = min(max(ifloor(ref_temp*10.0+10.0)+1,1),ATsize1)
+    temphix::Int = max(min(iceil(ref_temp*10.0+10.0)+1,ATsize1),1)
+    emislox::Int = min(max(ifloor((ref_emis)/2.0)+1,1),ATsize2)
+    emishix::Int = max(min(iceil((ref_emis)/2.0)+1,ATsize2),1)
     # Target indices (reals).
     tempx::Float64 = (ref_temp*10.0+10.0)+1.0
     emisx::Float64 = ((ref_emis)/2.0)+1.0
