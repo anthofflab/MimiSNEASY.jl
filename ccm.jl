@@ -47,22 +47,22 @@ const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
 @defcomp ccm begin
-    addParameter(deltat,Float64)
-    addParameter(Clim_sens,Float64)
-    addParameter(Q10,Float64)
-    addParameter(Beta,Float64)
-    addParameter(Eta,Float64) #default 16.88,   diffusion coeffs [m/yr]
-    addParameter(temp,Float64, index=[time])
-    addParameter(CO2_emissions,Float64, index=[time])
-    addParameter(anomtable,Array{Float64,2})
+    deltat = Parameter()
+    Clim_sens = Parameter()
+    Q10 = Parameter()
+    Beta = Parameter()
+    Eta = Parameter() #default 16.88,   diffusion coeffs [m/yr]
+    temp = Parameter(index=[time])
+    CO2_emissions = Parameter(index=[time])
+    anomtable::Array{Float64,2} = Parameter()
 
-    addVariable(tpools, Float64, index=[time,4])
-    addVariable(ocanom, Float64, index=[time,4])
-    addVariable(atmco2, Float64, index=[time])
-    addVariable(landflux, Float64, index=[time])
-    addVariable(atm_oc_flux, Float64, index=[time])
-    addVariable(Ftp, Float64, index=[4])
-    addVariable(Goc, Float64, index=[4])
+    tpools = Variable(index=[time,4])
+    ocanom = Variable(index=[time,4])
+    atmco2 = Variable(index=[time])
+    landflux = Variable(index=[time])
+    atm_oc_flux = Variable(index=[time])
+    Ftp = Variable(index=[4])
+    Goc = Variable(index=[4])
 end
 
 function init(s::ccm)

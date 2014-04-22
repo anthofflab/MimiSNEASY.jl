@@ -2,11 +2,11 @@ module radforccomponent
 using IAMF
 
 @defcomp radforc begin
-    addParameter(deltat, Float64)
-    addParameter(atmco2, Float64, index=[time])
-    addParameter(other_forcing, Float64, index=[time])
+    deltat = Parameter()
+    atmco2 = Parameter(index=[time])
+    other_forcing = Parameter(index=[time])
 
-    addVariable(rf, Float64, index=[time])
+    rf = Variable(index=[time])
 end
 
 function init(s::radforc)    
