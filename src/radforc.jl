@@ -9,9 +9,6 @@ using IAMF
     rf = Variable(index=[time])
 end
 
-function init(s::radforc)    
-end
-
 function timestep(s::radforc, t::Int)
     v = s.Variables
     p = s.Parameters

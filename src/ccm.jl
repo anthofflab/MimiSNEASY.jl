@@ -73,6 +73,8 @@ function init(s::ccm)
     v.tpools[1,3] = 120.0     # Detritus [GtC]
     v.tpools[1,4] = 1500.0    # Soil carbon [GtC]
 
+    v.ocanom[1,:] = 0
+
     v.atmco2[1] = 285.2        # [ppm]
 end
 
