@@ -26,10 +26,7 @@ function getsneasy(nsteps=566)
 
     # Timesteps
     deltat = 1.0
-    anomtable = zeros(100, 16000)
-    for i=1:16000
-        anomtable[:,i] = f_anomtable[i,:]
-    end
+    anomtable = f_anomtable'
 
     # ---------------------------------------------
     # Set parameters
