@@ -76,6 +76,11 @@ function init(s::ccm)
     v.ocanom[1,:] = 0
 
     v.atmco2[1] = 285.2        # [ppm]
+
+    v.ocanom[1,1] = 0
+    v.ocanom[1,2] = 0
+    v.ocanom[1,3] = 0
+    v.ocanom[1,4] = 0
 end
 
 function timestep(s::ccm, t::Int)
