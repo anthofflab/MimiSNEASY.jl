@@ -11,19 +11,19 @@
 #   Climate model calibrated to Hamburg AOGCM (T only)
 #
 # See model details in:
-#   Ricciuto, D. M., K. J. Davis, and K. Keller (2008), A Bayesian calibration 
-#       of a simple carbon cycle model: The role of observations in estimating 
-#       and reducing uncertainty, Global Biogeochem. Cycles, 22, GB2030, 
+#   Ricciuto, D. M., K. J. Davis, and K. Keller (2008), A Bayesian calibration
+#       of a simple carbon cycle model: The role of observations in estimating
+#       and reducing uncertainty, Global Biogeochem. Cycles, 22, GB2030,
 #       doi:10.1029/2006GB002908.
 #
 #------------------------------------------------------------------------------
-#  13 Mar 2009  Brian Tuttle <btuttle@psu.edu> received 
+#  13 Mar 2009  Brian Tuttle <btuttle@psu.edu> received
 #               globalinversion_fortran/model.f from Dan Ricciuto.
-#   May 2009    Rewrote model() subroutine as CCM.f90 module, including 
+#   May 2009    Rewrote model() subroutine as CCM.f90 module, including
 #               initialization, (de)allocation, and CC_model subroutines.
 #   Aug 2009    Incorporated CCM.f90 into EarthSystem module.
 #               Removed usetemp logical switch as well as the simple impulse
-#               response carbon/climate model in lieue of externally 
+#               response carbon/climate model in lieue of externally
 #               computed temperature forcing.
 #------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ const h1 = 672.0
 const h2 = 419.0
 const h3 = 1136.0
 const h4 = 2382.0
-const n3 = 9.04 
+const n3 = 9.04
 const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
@@ -98,24 +98,24 @@ function timestep(s::ccm, t::Int)
     resp_h = resp3+resp4
 
     v.landflux[t] = resp_h - npp
-    
-    # Set terrestrial pool sizes for next timestep  
+
+    # Set terrestrial pool sizes for next timestep
     v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
     v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
     v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
     v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
-      
+
     if t<s.nsteps
         for i=1:4
             v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
         end
     end
 
-    netemissions = p.CO2_emissions[t] + v.landflux[t]      
+    netemissions = p.CO2_emissions[t] + v.landflux[t]
 
     # Find fracinoc using the ocean anomaly table.
     fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
-    
+
     # Compute carbon anomaly in ocean mixed layer/atmosphere
     v.Goc[1] = netemissions-(p.Eta/hs)*v.ocanom[t,1]* fracinoc+(p.Eta/h2)*v.ocanom[t,2]
     # Compute carbon anomaly in ocean layers 2-4
@@ -127,7 +127,7 @@ function timestep(s::ccm, t::Int)
         for i=1:4
             v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
         end
-    
+
         # Compute flux into ocean
         v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
 
@@ -138,7 +138,7 @@ end
 function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     # A simple linear 2D interpolation over the ocean anomaly table to find
     # the fracinoc variable.
-    
+
     ATsize1 = size(anomtable,1)
     ATsize2 = size(anomtable,2)
 

@@ -14,7 +14,7 @@ function getsneasy(nsteps=566)
 
     addcomponent(m, radforccomponent.radforc)
     addcomponent(m, doeclimcomponent.doeclim)
-    addcomponent(m, ccmcomponent.ccm)    
+    addcomponent(m, ccmcomponent.ccm)
 
     # ---------------------------------------------
     # Read data
@@ -35,7 +35,7 @@ function getsneasy(nsteps=566)
     setparameter(m, :doeclim, :t2co, 2.0)
     setparameter(m, :doeclim, :kappa, 1.1)
     setparameter(m, :doeclim, :deltat, deltat)
-    
+
     setparameter(m, :ccm, :deltat, deltat)
     setparameter(m, :ccm, :Clim_sens, 2.0)
     setparameter(m, :ccm, :Q10, 1.311)
@@ -43,7 +43,7 @@ function getsneasy(nsteps=566)
     setparameter(m, :ccm, :Eta, 17.722)
     setparameter(m, :ccm, :CO2_emissions, vec(f_emissions[:,2]))
     setparameter(m, :ccm, :anomtable, anomtable)
-    
+
     setparameter(m, :radforc, :other_forcing, vec(f_nonco2forcing[:,2]))
     setparameter(m, :radforc, :deltat, deltat)
 
