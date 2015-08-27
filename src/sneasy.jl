@@ -51,9 +51,9 @@ function getsneasy(nsteps=566)
     # Connect parameters to variables
     # ---------------------------------------------
 
-    bindparameter(m, :doeclim, :forcing, :radforc, :rf)
-    bindparameter(m, :ccm, :temp, :doeclim)
-    bindparameter(m, :radforc, :atmco2, :ccm)
+    connectparameter(m, :doeclim, :forcing, :radforc, :rf)
+    connectparameter(m, :ccm, :temp, :doeclim, :temp)
+    connectparameter(m, :radforc, :atmco2, :ccm, :atmco2)
 
     return m
 end
