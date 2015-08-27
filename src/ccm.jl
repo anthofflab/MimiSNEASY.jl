@@ -28,7 +28,7 @@
 #------------------------------------------------------------------------------
 
 module ccmcomponent
-using IAMF
+using Mimi
 
 # Define factors used in the calculation.
 const r3f = 45.0 / 120.0

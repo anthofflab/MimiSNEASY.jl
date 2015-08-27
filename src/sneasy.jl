@@ -1,4 +1,4 @@
-using IAMF
+using Mimi
 include("doeclim.jl")
 include("ccm.jl")
 include("radforc.jl")

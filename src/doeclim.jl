@@ -55,7 +55,7 @@
 #
 # ==============================================================================
 module doeclimcomponent
-using IAMF
+using Mimi
 
 const ak   = 0.31
 const bk   = 1.59

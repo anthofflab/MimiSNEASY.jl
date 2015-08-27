@@ -1,5 +1,5 @@
 module radforccomponent
-using IAMF
+using Mimi
 
 @defcomp radforc begin
     deltat = Parameter()
