@@ -3,7 +3,7 @@ include("doeclim.jl")
 include("ccm.jl")
 include("radforc.jl")
 
-function getsneasy(nsteps=566)
+function getsneasy(;nsteps=566)
     m = Model()
 
     setindex(m, :time, nsteps)
