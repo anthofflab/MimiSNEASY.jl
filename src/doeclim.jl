@@ -342,6 +342,7 @@ function timestep(s::doeclim, n::Int)
     if n>1
         v.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
 
+        v.heatflux_interior[n] = 0.
         for i=1:n-1
             v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[s.nsteps-n+1+i]
         end
