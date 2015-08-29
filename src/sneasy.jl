@@ -45,6 +45,8 @@ function getsneasy(;nsteps=566)
     setparameter(m, :ccm, :anomtable, anomtable)
 
     setparameter(m, :radforc, :other_forcing, vec(f_nonco2forcing[:,2]))
+    setparameter(m, :radforc, :alpha, 1.)
+    setparameter(m, :radforc, :aerosol_forcing, zeros(size(f_emissions,1)))
     setparameter(m, :radforc, :deltat, deltat)
 
     # ---------------------------------------------
