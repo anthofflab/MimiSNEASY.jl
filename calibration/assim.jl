@@ -184,7 +184,7 @@ function construct_loglikelihood(endyear=2010; assim_temp=true, assim_ocheat=tru
 		llik_temp = 0.
 		if assim_temp #& !is.null(oidx.temp)) {
 			for (i, index)=enumerate(obs_temperature_indiceswithdata)
-				tempvar_temperature_res[i] = obs_temperature[index] - model_temperature[index]
+				tempvar_temperature_res[i] = obs_temperature[index] - model_temperature[index] + T0
 			end
 			llik_temp = loglar1(tempvar_temperature_res, σ_temp, ρ_temp)
 #			resid_temp = obs.temp[oidx.temp] - (model.out$temp[midx.temp]+T0)
@@ -194,7 +194,7 @@ function construct_loglikelihood(endyear=2010; assim_temp=true, assim_ocheat=tru
 		llik_ocheat = 0.
 		if assim_ocheat #& !is.null(oidx.ocheat)) {
 			for (i, index)=enumerate(obs_ocheat_indiceswithdata)
-				tempvar_ocheat_res[i] = obs_ocheat[index] - model_ocheat[index]
+				tempvar_ocheat_res[i] = obs_ocheat[index] - model_ocheat[index] + H0
 			end
 			llik_ocheat = loglar1(tempvar_ocheat_res, σ_ocheat, ρ_ocheat)
 
