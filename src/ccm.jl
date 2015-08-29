@@ -62,6 +62,8 @@ const npp0 = 60.0             # [GtC/yr]
     atm_oc_flux = Variable(index=[time])
     Ftp = Variable(index=[4])
     Goc = Variable(index=[4])
+
+    atmco20 = Parameter()
 end
 
 function init(s::ccm)
@@ -74,7 +76,7 @@ function init(s::ccm)
 
     v.ocanom[1,:] = 0
 
-    v.atmco2[1] = 285.2        # [ppm]
+    v.atmco2[1] = p.atmco20         # [ppm]
 
     v.ocanom[1,1] = 0
     v.ocanom[1,2] = 0
