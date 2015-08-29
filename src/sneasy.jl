@@ -3,7 +3,7 @@ include("doeclim.jl")
 include("ccm.jl")
 include("radforc.jl")
 
-function getsneasy(nsteps=566)
+function getsneasy(;nsteps=566)
     m = Model()
 
     setindex(m, :time, nsteps)
@@ -37,14 +37,16 @@ function getsneasy(nsteps=566)
     setparameter(m, :doeclim, :deltat, deltat)
 
     setparameter(m, :ccm, :deltat, deltat)
-    setparameter(m, :ccm, :Clim_sens, 2.0)
     setparameter(m, :ccm, :Q10, 1.311)
     setparameter(m, :ccm, :Beta, 0.502)
     setparameter(m, :ccm, :Eta, 17.722)
+    setparameter(m, :ccm, :atmco20, 285.2)
     setparameter(m, :ccm, :CO2_emissions, vec(f_emissions[:,2]))
     setparameter(m, :ccm, :anomtable, anomtable)
 
     setparameter(m, :radforc, :other_forcing, vec(f_nonco2forcing[:,2]))
+    setparameter(m, :radforc, :alpha, 1.)
+    setparameter(m, :radforc, :aerosol_forcing, zeros(size(f_emissions,1)))
     setparameter(m, :radforc, :deltat, deltat)
 
     # ---------------------------------------------
