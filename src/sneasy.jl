@@ -37,7 +37,6 @@ function getsneasy(nsteps=566)
     setparameter(m, :doeclim, :deltat, deltat)
 
     setparameter(m, :ccm, :deltat, deltat)
-    setparameter(m, :ccm, :Clim_sens, 2.0)
     setparameter(m, :ccm, :Q10, 1.311)
     setparameter(m, :ccm, :Beta, 0.502)
     setparameter(m, :ccm, :Eta, 17.722)

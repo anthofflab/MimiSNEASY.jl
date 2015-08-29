@@ -48,7 +48,6 @@ const npp0 = 60.0             # [GtC/yr]
 
 @defcomp ccm begin
     deltat = Parameter()
-    Clim_sens = Parameter()
     Q10 = Parameter()
     Beta = Parameter()
     Eta = Parameter() #default 16.88,   diffusion coeffs [m/yr]
