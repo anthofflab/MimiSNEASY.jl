@@ -16,4 +16,4 @@ mcmodel = model(logli, init=rbest)
 
 step = [1.6,1.7,0.25,0.75,0.15,40,0.015,0.03,9,0.7,1.3,0.005,0.25,0.045,0.57,0.07,0.06,0.11]./10
 
-mcchain = Lora.run(mcmodel, MH(x::Vector{Float64} -> rand(MvNormal(x, step))), SerialMC(nsteps=100_000, burnin=0))
+mcchain = Lora.run(mcmodel, MH(step), SerialMC(nsteps=100_000, burnin=1000))
