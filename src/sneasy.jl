@@ -12,9 +12,9 @@ function getsneasy(;nsteps=566)
     # Create components
     # ---------------------------------------------
 
-    addcomponent(m, radforccomponent.radforc)
-    addcomponent(m, doeclimcomponent.doeclim)
-    addcomponent(m, ccmcomponent.ccm)
+    addcomponent(m, radforccomponent.radforc, :radforc)
+    addcomponent(m, doeclimcomponent.doeclim, :doeclim)
+    addcomponent(m, ccmcomponent.ccm, :ccm)
 
     # ---------------------------------------------
     # Read data
