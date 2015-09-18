@@ -78,7 +78,7 @@ function doeclim(S, kappa, alpha)
 	mod_heatflux_interior = zeros(n)
 
 	# call Fortran DOECLIM
-	fout = ccall( (:run_doeclim_, "doeclim.so"),
+	fout = ccall( (:run_doeclim_, "doeclim"),
 		Int32, (Ptr{Int}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
 		&n,
 		mod_time,
