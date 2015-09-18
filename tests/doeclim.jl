@@ -69,7 +69,7 @@ end
 # DOECLIM climate model (0D EBM atmosphere + 1D diffusive ocean)
 # inputs: climate sensitivity (S), ocean vertical diffusivity (kappa), aerosol forcing scale factor (alpha)
 # outputs: annual global temperature (temp, K) and total ocean heat (ocheat, 10^22 J), mixed-layer and interior ocean heat (ocheat.mixed and ocheat.interior, 10^22 J), atmosphere->mixed and mixed->interior heat fluxes (ocheatflux.mixed and ocheatflux.interior, W/m^2)
-function doeclim(S, kappa, alpha)
+function fortranversion(S, kappa, alpha)
 	n = length(forcing_time)
 	forcing_total = total_forcing(forcing, alpha)
 
@@ -104,6 +104,7 @@ function juliaversion(S, kappa, alpha)
 
 	m = Model()
 
+	# Set length of time horizon
 	setindex(m, :time, length(forcing_time))
 
 	addcomponent(m, doeclimcomponent.doeclim)
@@ -118,6 +119,6 @@ function juliaversion(S, kappa, alpha)
 end
 
 temp_julia, mixed_julia, interior_julia = juliaversion(2., 1.1, 0.6)
-temp_f, mixed_f, interior_f = doeclim(2., 1.1, 0.6)
+temp_f, mixed_f, interior_f = fortranversion(2., 1.1, 0.6)
 
 @test maxabs(temp_julia-temp_f) < 0.0001
