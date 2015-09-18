@@ -29,6 +29,7 @@
 #   http://math.acadiau.ca/ACMMaC/howtos/Fortran_R.html
 #   http://cran.r-project.org/doc/manuals/R-exts.pdf (chapter 5)
 using DataFrames
+using Base.Test
 include("../src/sneasy.jl")
 
 # load forcing time series
@@ -118,3 +119,5 @@ end
 
 temp_julia, mixed_julia, interior_julia = juliaversion(2., 1.1, 0.6)
 temp_f, mixed_f, interior_f = doeclim(2., 1.1, 0.6)
+
+@test maxabs(temp_julia-temp_f) < 0.0001
