@@ -208,23 +208,23 @@ function init(s::doeclim)
 
         # Zeroth Order
 
-        v.KT0[i] = 4*sqrt(float64(s.nsteps+1-i)) - 2.*sqrt(float64(s.nsteps+2-i)) - 2*sqrt(float64(s.nsteps-i))
+        v.KT0[i] = 4*sqrt(Float64(s.nsteps+1-i)) - 2.*sqrt(Float64(s.nsteps+2-i)) - 2*sqrt(Float64(s.nsteps-i))
 
         # First Order
 
-        v.KTA1[i] = -8*sqrt(float64(s.nsteps+1-i)) * exp(-v.taubot/p.deltat/(s.nsteps+1-i)) + 4*sqrt(float64(s.nsteps+2-i)) *exp(-v.taubot/p.deltat/(s.nsteps+2-i)) + 4*sqrt(float64(s.nsteps-i)) *exp(-v.taubot/p.deltat/(s.nsteps-i))
+        v.KTA1[i] = -8*sqrt(Float64(s.nsteps+1-i)) * exp(-v.taubot/p.deltat/(s.nsteps+1-i)) + 4*sqrt(Float64(s.nsteps+2-i)) *exp(-v.taubot/p.deltat/(s.nsteps+2-i)) + 4*sqrt(Float64(s.nsteps-i)) *exp(-v.taubot/p.deltat/(s.nsteps-i))
 
         v.KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
 
         # Second Order
 
-        v.KTA2[i] =  8.*sqrt(float64(s.nsteps+1-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps+1-i))- 4.*sqrt(float64(s.nsteps+2-i))*exp(-4.*v.taubot/p.deltat/(s.nsteps+2-i))- 4.*sqrt(float64(s.nsteps-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps-i))
+        v.KTA2[i] =  8.*sqrt(Float64(s.nsteps+1-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps+1-i))- 4.*sqrt(Float64(s.nsteps+2-i))*exp(-4.*v.taubot/p.deltat/(s.nsteps+2-i))- 4.*sqrt(Float64(s.nsteps-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps-i))
 
-        v.KTB2[i] = -8.*sqrt(pi*v.taubot/p.deltat) * (erf(2.*sqrt(v.taubot/p.deltat/(float64(s.nsteps-i)))) + erf(2.*sqrt(v.taubot/p.deltat/float64(s.nsteps+2-i))) -       2.*erf(2.*sqrt(v.taubot/p.deltat/float64(s.nsteps+1-i))) )
+        v.KTB2[i] = -8.*sqrt(pi*v.taubot/p.deltat) * (erf(2.*sqrt(v.taubot/p.deltat/(Float64(s.nsteps-i)))) + erf(2.*sqrt(v.taubot/p.deltat/Float64(s.nsteps+2-i))) -       2.*erf(2.*sqrt(v.taubot/p.deltat/Float64(s.nsteps+1-i))) )
 
         # Third Order
 
-        v.KTA3[i] = -8.*sqrt(float64(s.nsteps+1-i)) *exp(-9.*v.taubot/p.deltat/(s.nsteps+1.-i)) + 4.*sqrt(float64(s.nsteps+2-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps+2.-i)) + 4.*sqrt(float64(s.nsteps-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps-i))
+        v.KTA3[i] = -8.*sqrt(Float64(s.nsteps+1-i)) *exp(-9.*v.taubot/p.deltat/(s.nsteps+1.-i)) + 4.*sqrt(Float64(s.nsteps+2-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps+2.-i)) + 4.*sqrt(Float64(s.nsteps-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps-i))
 
         v.KTB3[i] = 12.*sqrt(pi*v.taubot/p.deltat) * (erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2.*erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
     end
