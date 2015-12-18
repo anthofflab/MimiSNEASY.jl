@@ -31,6 +31,7 @@
 using DataFrames
 using Base.Test
 include("../src/sneasy.jl")
+include("../../sneasy/julia/sneasy.jl")
 
 # load forcing time series
 forcing = readtable("forcing.txt", separator=' ', names=[:year,:co2,:nonco2_land,:nonco2_ocean,:aerosol_land,:aerosol_ocean,:solar_land,:solar_ocean,:volc_land,:volc_ocean,:tot_land,:tot_ocean], header=false)
@@ -66,39 +67,6 @@ end
 #	return(list(ocean.heat=ocean.heat, heat.mixed=heat.mixed, heat.interior=heat.interior))
 #}
 
-# DOECLIM climate model (0D EBM atmosphere + 1D diffusive ocean)
-# inputs: climate sensitivity (S), ocean vertical diffusivity (kappa), aerosol forcing scale factor (alpha)
-# outputs: annual global temperature (temp, K) and total ocean heat (ocheat, 10^22 J), mixed-layer and interior ocean heat (ocheat.mixed and ocheat.interior, 10^22 J), atmosphere->mixed and mixed->interior heat fluxes (ocheatflux.mixed and ocheatflux.interior, W/m^2)
-function fortranversion(S, kappa, alpha)
-	n = length(forcing_time)
-	forcing_total = total_forcing(forcing, alpha)
-
-	mod_time = zeros(n)
-	mod_temp = zeros(n)
-	mod_heatflux_mixed = zeros(n)
-	mod_heatflux_interior = zeros(n)
-
-	# call Fortran DOECLIM
-	fout = ccall( (:run_doeclim_, "doeclim"),
-		Int32, (Ptr{Int}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}, Ptr{Float64}),
-		&n,
-		mod_time,
-		convert(Array, forcing_total),
-		&S,
-		&kappa,
-		mod_temp,
-		mod_heatflux_mixed,
-		mod_heatflux_interior
-		)
-
-	#ocheat = flux.to.heat(fout$heatflux_mixed, fout$heatflux_interior)
-
-	#model.output = list(time=mod.time, temp=fout$temp, ocheat=ocheat$ocean.heat, ocheat.mixed=ocheat$heat.mixed, ocheat.interior=ocheat$heat.interior, ocheatflux.mixed = fout$heatflux_mixed, ocheatflux.interior = fout$heatflux_interior)
-
-	#return(model.output)
-	return mod_temp, mod_heatflux_mixed, mod_heatflux_interior
-end
-
 function juliaversion(S, kappa, alpha)
 	forcing_total = total_forcing(forcing, alpha)
 
@@ -107,7 +75,7 @@ function juliaversion(S, kappa, alpha)
 	# Set length of time horizon
 	setindex(m, :time, length(forcing_time))
 
-	addcomponent(m, doeclimcomponent.doeclim)
+	addcomponent(m, doeclimcomponent.doeclim, :doeclim)
 	setparameter(m, :doeclim, :t2co, S)
 	setparameter(m, :doeclim, :kappa, kappa)
 	setparameter(m, :doeclim, :deltat, 1.)
@@ -119,6 +87,6 @@ function juliaversion(S, kappa, alpha)
 end
 
 temp_julia, mixed_julia, interior_julia = juliaversion(2., 1.1, 0.6)
-temp_f, mixed_f, interior_f = fortranversion(2., 1.1, 0.6)
+temp_f, mixed_f, interior_f = run_fortran_doeclim(2., 1.1, total_forcing(forcing, 0.6))
 
 @test maxabs(temp_julia-temp_f) < 0.0001
