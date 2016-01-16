@@ -189,10 +189,10 @@ function init(s::doeclim)
 
     # Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
     # Switched on (To switch off, comment out lines below)
-    v.Cdoe[1,1] = 1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[1,2] = -bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[2,1] = -bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[2,2] =  1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
+    v.Cdoe[1,1] = (1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[1,2] = (-bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,1] = (-bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,2] = (1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
 
     # Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
     # T = (TL,TO)
