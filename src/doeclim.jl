@@ -306,6 +306,23 @@ function timestep(s::doeclim, n::Int)
         DTE1[n] = v.IB[1,1]*(DQ1+DPAST1+DTEAUX1)+v.IB[1,2]*(DQ2+DPAST2+DTEAUX2)
         DTE2[n] = v.IB[2,1]*(DQ1+DPAST1+DTEAUX1)+v.IB[2,2]*(DQ2+DPAST2+DTEAUX2)
 
+
+        # Calculate ocean heat uptake [W/m^2]
+        # heatflux(n) captures in the heat flux in the period between n-1 and n
+        # Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
+        # ------------------------------------------------------------------------
+        v.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
+
+        v.heatflux_interior[n] = 0.
+        for i=1:n-1
+            v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[s.nsteps-n+1+i]
+        end
+        v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2.*DTE2[n] - v.heatflux_interior[n])
+
+        v.heat_mixed[n] = v.heat_mixed[n-1] +v.heatflux_mixed[n] *(v.powtoheat*p.deltat)
+
+        v.heat_interior[n] = v.heat_interior[n-1] + v.heatflux_interior[n] * (fso*v.powtoheat*p.deltat)
+
     else
 
         # handle initial values
@@ -323,31 +340,7 @@ function timestep(s::doeclim, n::Int)
 
         v.temp_landair[1] = 0.0
         v.temp_sst[1] = 0.0
-    end
 
-    v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
-
-    # Calculate ocean heat uptake [W/m^2]
-    # heatflux(n) captures in the heat flux in the period between n-1 and n
-    # Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
-    # ------------------------------------------------------------------------
-
-
-    if n>1
-        v.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
-
-        v.heatflux_interior[n] = 0.
-        for i=1:n-1
-            v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[s.nsteps-n+1+i]
-        end
-        v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2.*DTE2[n] - v.heatflux_interior[n])
-
-        v.heat_mixed[n] = v.heat_mixed[n-1] +v.heatflux_mixed[n] *(v.powtoheat*p.deltat)
-
-        v.heat_interior[n] = v.heat_interior[n-1] + v.heatflux_interior[n] * (fso*v.powtoheat*p.deltat)
-
-    else
-        # handle initial values
         v.heatflux_mixed[1] = 0.0
         v.heatflux_interior[1] = 0.0
 
