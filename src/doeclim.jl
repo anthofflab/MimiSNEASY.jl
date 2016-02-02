@@ -348,6 +348,8 @@ function timestep(s::doeclim, n::Int)
         v.heat_interior[1] = 0.0
     end
 
+    v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
+
 end
 
 end
