@@ -1,92 +1,57 @@
-# doeclim.R
-#
-# Nathan M. Urban (nurban@psu.edu)
-# Department of Geosciences, Penn State
-#
-# Implements DOECLIM, a simple climate model
-#
-# DOECLIM is a 0-dimensional energy balance model (EBM) for the
-# atmosphere coupled to a 1-dimensional diffusive ocean.  The
-# model outputs temperature and ocean heat content time series
-# as well as ocean heat fluxes.  See:
-#
-#  Elmar Kriegler, "Imprecise probability analysis for integrated
-#  assessment of climate change", Ph.D. thesis, Potsdam (2005).
-#   http://opus.kobv.de/ubp/volltexte/2005/561/
-#  (Fortran port by Marlos Goes and Nathan Urban.)
-#
-# The model is implemented in Fortran and called from R.  This
-# file also contains functions to load and process forcing data
-# and model output.  Any pre/post-processing of input/output
-# should be done in R or otherwise separate from the main
-# model subroutine, which for computational efficiency
-# should not perform any file I/O itself.  The Fortran model
-# must be implemented as a standalone subroutine.
-#
-# For further information on R/Fortran coupling, see:
-#
-#   http://www.stat.umn.edu/~charlie/rc/
-#   http://math.acadiau.ca/ACMMaC/howtos/Fortran_R.html
-#   http://cran.r-project.org/doc/manuals/R-exts.pdf (chapter 5)
-using DataFrames
 using Base.Test
-include("../src/sneasy.jl")
+using Mimi
+using DataFrames
+
 include("../../sneasy/julia/sneasy.jl")
+include("../src/doeclim.jl")
 
-# load forcing time series
-forcing = readtable("forcing.txt", separator=' ', names=[:year,:co2,:nonco2_land,:nonco2_ocean,:aerosol_land,:aerosol_ocean,:solar_land,:solar_ocean,:volc_land,:volc_ocean,:tot_land,:tot_ocean], header=false)
-forcing_time = forcing[:year]
-endyear = forcing_time[end]
+df = readtable("../../sneasy/data/forcing_rcp85.txt", separator=' ');
+df = DataFrame(year=df[:year], rf=df[:co2]+df[:aerosol_direct]+df[:aerosol_indirect]+df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other]);
+total_forcing = convert(Array, df[:rf]);
 
-# calculate total radiative forcing from individual land/ocean forcings
-function total_forcing(forcing, alpha)
-	flnd = 0.29 # area land fraction
+deltat = 1.0
 
-	forcing_land = forcing[:co2] + forcing[:nonco2_land] + alpha*forcing[:aerosol_land] + forcing[:solar_land] + forcing[:volc_land]
-	forcing_ocean = forcing[:co2] + forcing[:nonco2_ocean] + alpha*forcing[:aerosol_ocean] + forcing[:solar_ocean] + forcing[:volc_ocean]
 
-	forcing_total = flnd .* forcing_land + (1-flnd) .* forcing_ocean
+function mimidoeclim(t2co, kappa, forcing)
 
-	return forcing_total
+    m = Model(;)
+
+    setindex(m, :time, length(total_forcing))
+
+    addcomponent(m, doeclimcomponent.doeclim, :doeclim)
+
+	setparameter(m, :doeclim, :t2co, t2co)
+    setparameter(m, :doeclim, :kappa, kappa)
+    setparameter(m, :doeclim, :deltat, deltat)
+    setparameter(m, :doeclim, :forcing, forcing)
+
+    run(m)
+    return m[:doeclim, :temp], m[:doeclim, :heatflux_mixed], m[:doeclim, :heatflux_interior]
 end
 
-# convert annual ocean heat flux (W/m^2) to cumulative ocean heat content anomaly (10^22 J)
-#flux.to.heat = function(heatflux.mixed, heatflux.interior)
-#{
-#	flnd = 0.29 # area land fraction
-#	fso = 0.95 # ocean area fraction of interior
-#	secs.per.year = 31556926
-#	earth.area = 510065600 * 10^6
-#	ocean.area = (1-flnd)*earth.area
-#	powtoheat = ocean.area*secs.per.year / 10^22 # in 10^22 J/yr
+
+
+#Note on Parameter/Variable Values
+#	t2co				=	climate sensitivity to 2xCO2 (K)
+#	kappa				=	vertical ocean diffusivity (cm^2 s^-1)
+#	deltat				=	timestep
+#	forcing				=	total radiative forcing
+#	temp				=	global mean temperature anomaly (K), relative to preindustrial
+#	heatflux_mixed		=	heat uptake of the mixed layer (W/m^2)
+# 	heatflux_interior	=	heat uptake of the interior ocean (W/m^2)
 #
-#	heat.mixed = cumsum(heatflux.mixed) * powtoheat
-#	heat.interior = fso * cumsum(heatflux.interior) * powtoheat
-#	ocean.heat = heat.mixed + heat.interior
-#
-#	return(list(ocean.heat=ocean.heat, heat.mixed=heat.mixed, heat.interior=heat.interior))
-#}
+#	format for run_fortran_doeclim = run_fortran_doeclim(t2co, Kappa, radiative_forcing)
 
-function juliaversion(S, kappa, alpha)
-	forcing_total = total_forcing(forcing, alpha)
+#Run Mimi Verseion of doeclim
+m_temp, m_heatflux_mixed, m_heatflux_interior = mimidoeclim(2.0, 1.1, total_forcing);
 
-	m = Model()
+#Run fortran version of doeclim
+f_temp, f_heatflux_mixed, f_heatflux_interior = run_fortran_doeclim(2.0, 1.1, total_forcing);
 
-	# Set length of time horizon
-	setindex(m, :time, length(forcing_time))
 
-	addcomponent(m, doeclimcomponent.doeclim, :doeclim)
-	setparameter(m, :doeclim, :t2co, S)
-	setparameter(m, :doeclim, :kappa, kappa)
-	setparameter(m, :doeclim, :deltat, 1.)
-	setparameter(m, :doeclim, :forcing, convert(Array, forcing_total))
+#Test Precision
+Precision = 1.0e-6
 
-	run(m)
-
-	return m[:doeclim, :temp], m[:doeclim, :heatflux_mixed], m[:doeclim, :heatflux_interior]
-end
-
-temp_julia, mixed_julia, interior_julia = juliaversion(2., 1.1, 0.6)
-temp_f, mixed_f, interior_f = run_fortran_doeclim(2., 1.1, total_forcing(forcing, 0.6))
-
-@test maxabs(temp_julia-temp_f) < 0.0001
+@test_approx_eq_eps maxabs(m_temp .- f_temp) 0. Precision
+@test_approx_eq_eps maxabs(m_heatflux_mixed .- f_heatflux_mixed) 0. Precision
+@test_approx_eq_eps maxabs(m_heatflux_interior .- f_heatflux_interior) 0. Precision
