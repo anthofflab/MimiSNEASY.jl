@@ -189,10 +189,10 @@ function init(s::doeclim)
 
     # Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
     # Switched on (To switch off, comment out lines below)
-    v.Cdoe[1,1] = 1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[1,2] = -bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[2,1] = -bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl*(p.deltat^2/12.)
-    v.Cdoe[2,2] =  1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl*(p.deltat^2/12.)
+    v.Cdoe[1,1] = (1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[1,2] = (-bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,1] = (-bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,2] = (1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
 
     # Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
     # T = (TL,TO)
@@ -271,7 +271,7 @@ function timestep(s::doeclim, n::Int)
     QL = p.forcing
     Q0 = p.forcing
 
-    if n>2
+    if n>1
         DelQL = QL[n] - QL[n-1]
         DelQ0 = Q0[n] - Q0[n-1]
 
@@ -305,41 +305,12 @@ function timestep(s::doeclim, n::Int)
 
         DTE1[n] = v.IB[1,1]*(DQ1+DPAST1+DTEAUX1)+v.IB[1,2]*(DQ2+DPAST2+DTEAUX2)
         DTE2[n] = v.IB[2,1]*(DQ1+DPAST1+DTEAUX1)+v.IB[2,2]*(DQ2+DPAST2+DTEAUX2)
-    else
-        # handle initial values
-
-        DTE1[1] = 0.0
-        DTE2[1] = 0.0
-
-        DelQL = QL[2] - QL[1]
-        DelQ0 = Q0[2] - Q0[1]
-
-        QC1 = DelQL/cal*(1./v.taucfl+1./v.taukls)-bsi*DelQ0/cas/v.taukls
-        QC2 = DelQ0/cas*(1./v.taucfs+bsi/v.tauksl)-DelQL/cal/v.tauksl
-        QC1 = QC1*p.deltat^2/12.
-        QC2 = QC2*p.deltat^2/12.
-
-        DQ1 = 0.5*p.deltat/cal*(QL[2]+QL[1])
-        DQ2 = 0.5*p.deltat/cas*(Q0[2]+Q0[1])
-        DQ1= DQ1 + QC1
-        DQ2= DQ2 + QC2
-
-        DTEAUX1=v.Adoe[1,1]*DTE1[1]+v.Adoe[1,2]*DTE2[1]
-        DTEAUX2=v.Adoe[2,1]*DTE1[1]+v.Adoe[2,2]*DTE2[1]
-
-        DTE1[2] = v.IB[1,1]*(DQ1 +DTEAUX1)+v.IB[1,2]*(DQ2+DTEAUX2)
-        DTE2[2] = v.IB[2,1]*(DQ1 +DTEAUX1)+v.IB[2,2]*(DQ2+DTEAUX2)
-    end
-
-    v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
-
-    # Calculate ocean heat uptake [W/m^2]
-    # heatflux(n) captures in the heat flux in the period between n-1 and n
-    # Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
-    # ------------------------------------------------------------------------
 
 
-    if n>1
+        # Calculate ocean heat uptake [W/m^2]
+        # heatflux(n) captures in the heat flux in the period between n-1 and n
+        # Numerical implementation of Equation 2.7, EK05, or Equation 2.3.13, TK07)
+        # ------------------------------------------------------------------------
         v.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
 
         v.heatflux_interior[n] = 0.
@@ -353,13 +324,31 @@ function timestep(s::doeclim, n::Int)
         v.heat_interior[n] = v.heat_interior[n-1] + v.heatflux_interior[n] * (fso*v.powtoheat*p.deltat)
 
     else
+
         # handle initial values
+        DelQL = 0.0
+        DelQ0 = 0.0
+
+        QC1 = 0.0
+        QC2 = 0.0
+
+        DQ1 = 0.0
+        DQ2 = 0.0
+
+        DPAST2 = 0.0
+        DPAST1 = 0.0
+
+        v.temp_landair[1] = 0.0
+        v.temp_sst[1] = 0.0
+
         v.heatflux_mixed[1] = 0.0
         v.heatflux_interior[1] = 0.0
 
         v.heat_mixed[1] = 0.0
         v.heat_interior[1] = 0.0
     end
+
+    v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
 
 end
 

@@ -1,9 +1,12 @@
+
 using Mimi
+using DataFrames
+
 include("doeclim.jl")
 include("ccm.jl")
 include("radforc.jl")
 
-function getsneasy(;nsteps=566)
+function getsneasy(;nsteps=736)
     m = Model()
 
     setindex(m, :time, nsteps)
@@ -20,13 +23,16 @@ function getsneasy(;nsteps=566)
     # Read data
     # ---------------------------------------------
 
-    f_anomtable = readdlm("../data/anomtable.txt")
-    f_emissions = readdlm("../data/emis_data_sep09.txt")
-    f_nonco2forcing = readdlm("../data/non_CO2_forcing.txt")
+    f_anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
+    f_nonco2forcing = readtable("../../sneasy/data/forcing_rcp85.txt", separator = ' ', header=true);
+    df = readtable("../../sneasy/data/RCP85_EMISSIONS.csv");
+    rename!(df, :YEARS, :year);
+    df = DataFrame(year=df[:year], co2=df[:FossilCO2]+df[:OtherCO2]);
+    f_co2emissions = convert(Array, df[:co2]);
 
     # Timesteps
     deltat = 1.0
-    anomtable = f_anomtable'
+    anomtable = transpose(f_anomtable)
 
     # ---------------------------------------------
     # Set parameters
@@ -39,14 +45,18 @@ function getsneasy(;nsteps=566)
     setparameter(m, :ccm, :deltat, deltat)
     setparameter(m, :ccm, :Q10, 1.311)
     setparameter(m, :ccm, :Beta, 0.502)
-    setparameter(m, :ccm, :Eta, 17.722)
-    setparameter(m, :ccm, :atmco20, 285.2)
-    setparameter(m, :ccm, :CO2_emissions, vec(f_emissions[:,2]))
+    setparameter(m, :ccm, :Eta, 17.7)
+    setparameter(m, :ccm, :atmco20, 280.)
+    setparameter(m, :ccm, :CO2_emissions, f_co2emissions)
     setparameter(m, :ccm, :anomtable, anomtable)
 
-    setparameter(m, :radforc, :other_forcing, vec(f_nonco2forcing[:,2]))
+    setparameter(m, :radforc, :forcing_other, Vector(f_nonco2forcing[:other]))
+    setparameter(m, :radforc, :forcing_volcanic, Vector(f_nonco2forcing[:volcanic]))
+    setparameter(m, :radforc, :forcing_solar, Vector(f_nonco2forcing[:solar]))
+    setparameter(m, :radforc, :forcing_ghg_nonco2, Vector(f_nonco2forcing[:ghg_nonco2]))
+    setparameter(m, :radforc, :forcing_aerosol_direct, Vector(f_nonco2forcing[:aerosol_direct]))
+    setparameter(m, :radforc, :forcing_aerosol_indirect, Vector(f_nonco2forcing[:aerosol_indirect]))
     setparameter(m, :radforc, :alpha, 1.)
-    setparameter(m, :radforc, :aerosol_forcing, zeros(size(f_emissions,1)))
     setparameter(m, :radforc, :deltat, deltat)
 
     # ---------------------------------------------
