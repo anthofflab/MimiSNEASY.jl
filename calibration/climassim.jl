@@ -2,6 +2,7 @@ using Lora
 using Gadfly
 using NLopt
 
+# Should the mcmc algorithm start with the same start values as the R code?
 strict_R_compat = true
 
 include("assim.jl")
