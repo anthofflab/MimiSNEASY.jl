@@ -4,6 +4,8 @@ using NLopt
 
 # Should the mcmc algorithm start with the same start values as the R code?
 strict_R_compat = true
+# Multiple chains? This was in the R version but doesn't currently work here
+multiple_chains = false
 # Possible falues are :fortran and :julia
 sneasy_version = :fortran
 
@@ -46,17 +48,24 @@ model = likelihood_model(BasicContMuvParameter(:p, logtarget=log_post), false)
 
 step = [1.6,1.7,0.25,0.75,0.15,40,0.015,0.03,9,0.7,1.3,0.005,0.25,0.045,0.57,0.07,0.06,0.11]./10
 
-job1 = BasicMCJob(model, MH(step), BasicMCRange(nsteps=10000, burnin=0), Dict(:p=>p0))
-@time mcchain1 = run(job1)
+if multiple_chains
+    job1 = BasicMCJob(model, MH(step), BasicMCRange(nsteps=10000, burnin=0), Dict(:p=>p0))
+    @time mcchain1 = run(job1)
 
-job2 = BasicMCJob(model, MH(proposal_matrix(output(job1),mult=0.5)), BasicMCRange(nsteps=100_000, burnin=0), Dict(:p=>p0))
-@time mcchain2 = run(job2)
+    job2 = BasicMCJob(model, MH(proposal_matrix(output(job1),mult=0.5)), BasicMCRange(nsteps=100_000, burnin=0), Dict(:p=>p0))
+    @time mcchain2 = run(job2)
 
-job3 = BasicMCJob(model, MH(proposal_matrix(output(job2),mult=0.5)), BasicMCRange(nsteps=1_000_000, burnin=0), Dict(:p=>p0))
-@time mcchain3 = run(job3)
+    job3 = BasicMCJob(model, MH(proposal_matrix(output(job2),mult=0.5)), BasicMCRange(nsteps=1_000_000, burnin=0), Dict(:p=>p0))
+    @time mcchain3 = run(job3)
+
+    job = job3
+else
+    job = BasicMCJob(model, MH(step), BasicMCRange(nsteps=100_000, burnin=1_000), Dict(:p=>p0))
+    @time mcchain1 = run(job)
+end
 
 for (i,name) in enumerate(parnames)
-    draw(PDF("plot-$name.pdf", 12cm,12cm), plot(x=vec(output(job3).value[i,:]), Geom.density, Guide.title(name)))
+    draw(PDF("plot-$name.pdf", 12cm,12cm), plot(x=vec(output(job).value[i,:]), Geom.density, Guide.title(name)))
 end
 
 #cleanup_sneasy() # deallocates memory after SNEASY is done
