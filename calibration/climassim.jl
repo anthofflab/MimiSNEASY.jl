@@ -4,11 +4,21 @@ using NLopt
 
 # Should the mcmc algorithm start with the same start values as the R code?
 strict_R_compat = true
+# Possible falues are :fortran and :julia
+sneasy_version = :fortran
 
 include("assim.jl")
 
+run_mimi_sneasy! = construct_run_mimi_sneasy()
+
 # Get log-likelihood function
-log_post = construct_log_post()
+if sneasy_version==:fortran
+    log_post = construct_log_post(run_fortran_sneasy!)
+elseif sneasy_version==:julia
+    log_post = construct_log_post(run_mimi_sneasy!)
+else
+    error("Unknown sneasy version requested")
+end
 
 parnames = ["S","kappa","alpha","Q10","beta","eta","h","T0","H0","CO20","MOC0","sigma.T","sigma.H","sigma.CO2.inst","sigma.CO2.ice","rho.T","rho.H","rho.CO2.inst"]
 

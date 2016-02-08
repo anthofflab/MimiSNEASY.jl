@@ -4,6 +4,7 @@ using DataFramesMeta
 
 include("loadobs.jl")
 include(joinpath(dirname(@__FILE__), "..", "..", "sneasy", "julia", "sneasy.jl"))
+include("run_mimi_sneasy.jl")
 
 function sneasy_load_data()
 	# load emissions data time series.
@@ -95,7 +96,7 @@ function log_pri(p)
 	return lpri
 end
 
-function construct_log_post(endyear=2010; assim_temp=true, assim_ocheat=true, assim_co2inst=true)
+function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_ocheat=true, assim_co2inst=true)
 	df_forcing = sneasy_load_data()
 
 	df_obs = loaddata()
@@ -168,7 +169,7 @@ function construct_log_post(endyear=2010; assim_temp=true, assim_ocheat=true, as
 		ρ_ocheat = p[17]
 		ρ_co2inst = p[18]
 
-		run_fortran_sneasy!(MOC_strength, radiative_forc, model_co2, atm_oc_flux, model_temperature, model_ocheat,
+		f_run_model(MOC_strength, radiative_forc, model_co2, atm_oc_flux, model_temperature, model_ocheat,
 			f_co2, f_aerosols, f_other,
 			S, κ, α, Q10, beta, eta, hydsens, CO20, MOC0)
 
