@@ -1,7 +1,7 @@
 using DataFrames
 
 function loaddata()
-  dat = readtable(joinpath(dirname(@__FILE__),"../data/temp.txt"), separator=' ')
+  dat = readtable(joinpath(dirname(@__FILE__),"data/temp.txt"), separator=' ')
   dat[:temperature] = dat[:temperature]-mean(dat[1:20,:temperature])
   rename!(dat, :temperature, :obs_temperature)
   df = dat
@@ -9,16 +9,16 @@ function loaddata()
   # annual global ocean heat content (0-3000 m)
   # Gouretski & Koltermann, "How much is the ocean really warming?",
   # Geophysical Research Letters 34, L01610 (2007).
-  dat = readtable(joinpath(dirname(@__FILE__),"../data/gouretski_ocean_heat_3000m.txt"), header=false, separator=' ', names=[:year, :obs_ocheat, :obs_ocheatsigma], commentmark='%', allowcomments=true)
+  dat = readtable(joinpath(dirname(@__FILE__),"data/gouretski_ocean_heat_3000m.txt"), header=false, separator=' ', names=[:year, :obs_ocheat, :obs_ocheatsigma], commentmark='%', allowcomments=true)
   df = join(df, dat, on=:year, kind=:outer)
 
   # Mauna Loa instrumental CO2
-  dat = readtable(joinpath(dirname(@__FILE__),"../data/co2instobs.txt"), separator=' ')
+  dat = readtable(joinpath(dirname(@__FILE__),"data/co2instobs.txt"), separator=' ')
   rename!(dat, :co2, :obs_co2inst)
   df = join(df, dat, on=:year, kind=:outer)
 
   # Law Dome ice core CO2
-  dat = readtable(joinpath(dirname(@__FILE__),"../data/co2iceobs.txt"), separator=' ', header=false, names=[:year, :obs_co2ice, :unknown])
+  dat = readtable(joinpath(dirname(@__FILE__),"data/co2iceobs.txt"), separator=' ', header=false, names=[:year, :obs_co2ice, :unknown])
   dat = DataFrame(year=dat[:year], obs_co2ice=dat[:obs_co2ice])
   df = join(df, dat, on=:year, kind=:outer)
   # obs.co2ice.err = rep(4, length(obs.co2ice))

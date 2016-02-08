@@ -3,14 +3,14 @@ using DataFrames
 using DataFramesMeta
 
 include("loadobs.jl")
-include(joinpath(dirname(@__FILE__), "..", "julia", "sneasy.jl"))
+include(joinpath(dirname(@__FILE__), "..", "..", "sneasy", "julia", "sneasy.jl"))
 
 function sneasy_load_data()
 	# load emissions data time series.
-	df_emissions = readtable(joinpath(dirname(@__FILE__),"../data/RCP85_EMISSIONS.csv"))
+	df_emissions = readtable(joinpath(dirname(@__FILE__),"data/RCP85_EMISSIONS.csv"))
 	rename!(df_emissions, :YEARS, :year)
 
-	df_forcings = readtable(joinpath(dirname(@__FILE__),"../data/forcing_rcp85.txt"), separator=' ')
+	df_forcings = readtable(joinpath(dirname(@__FILE__),"data/forcing_rcp85.txt"), separator=' ')
 
 	df = join(df_emissions, df_forcings, on=:year)
 
