@@ -7,7 +7,7 @@ strict_R_compat = true
 # Multiple chains? This was in the R version but doesn't currently work here
 multiple_chains = false
 # Possible falues are :fortran and :julia
-sneasy_version = :fortran
+sneasy_version = :julia
 
 include("assim.jl")
 
