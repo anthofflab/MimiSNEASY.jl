@@ -23,9 +23,9 @@ function getsneasy(;nsteps=736)
     # Read data
     # ---------------------------------------------
 
-    f_anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
-    f_nonco2forcing = readtable("../../sneasy/data/forcing_rcp85.txt", separator = ' ', header=true);
-    df = readtable("../../sneasy/data/RCP85_EMISSIONS.csv");
+    f_anomtable = readdlm(joinpath(dirname(@__FILE__), "..", "data", "anomtable.txt"));
+    f_nonco2forcing = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "forcing_rcp85.txt"), separator = ' ', header=true);
+    df = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "RCP85_EMISSIONS.csv"));
     rename!(df, :YEARS, :year);
     df = DataFrame(year=df[:year], co2=df[:FossilCO2]+df[:OtherCO2]);
     f_co2emissions = convert(Array, df[:co2]);
