@@ -217,7 +217,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
         llik_co2ice = 0.
         if assim_co2ice
-            for(i, index)=enumerate(obs_co2ice_indiceswithdata)
+            for (i, index)=enumerate(obs_co2ice_indiceswithdata)
                 mean_co2ice[i] = mean(model_co2[index + (-4:3)])
                 llik_co2ice = llik_co2ice + logpdf(Normal(mean_co2ice[i], σ_co2ice), obs_co2ice[index])
             end
@@ -225,7 +225,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
         llik_ocflux = 0.
         if assim_ocflux
-            for(i,index) = enumerate(obs_ocflux_indiceswithdata)
+            for (i,index) = enumerate(obs_ocflux_indiceswithdata)
                 llik_ocflux =  llik_ocflux + logpdf(Normal(atm_oc_flux[index], obs_ocflux_err[index]), obs_ocflux[index])
             end
         end
