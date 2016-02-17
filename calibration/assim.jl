@@ -96,7 +96,7 @@ function log_pri(p)
 	return lpri
 end
 
-function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_ocheat=true, assim_co2inst=true)
+function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_ocheat=true, assim_co2inst=true, assim_co2ice=true, assim_ocflux=true)
 	df_forcing = sneasy_load_data()
 
 	df_obs = loaddata()
@@ -136,6 +136,24 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 	end
   	tempvar_co2inst_res = zeros(length(obs_co2inst_indiceswithdata))
 
+    obs_co2ice = df[:obs_co2ice]
+    obs_co2ice_indiceswithdata = Array(Int,0)
+    for i=1:length(obs_co2ice)
+        if !isna(obs_co2ice[i])
+            push!(obs_co2ice_indiceswithdata, i)
+        end
+    end
+    mean_co2ice = zeros(length(obs_co2ice_indiceswithdata))
+
+    obs_ocflux = df[:obs_ocflux]
+    obs_ocflux_err = df[:obs_ocflux_err]
+    obs_ocflux_indiceswithdata = Array(Int,0)
+    for i=1:length(obs_ocflux)
+        if !isna(obs_ocflux[i])
+            push!(obs_ocflux_indiceswithdata, i)
+        end
+    end
+
 	init_fortran_sneasy()
 
 	n = length(f_co2)
@@ -174,48 +192,43 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 			S, κ, α, Q10, beta, eta, hydsens, CO20, MOC0)
 
 		llik_temp = 0.
-		if assim_temp #& !is.null(oidx.temp)) {
+		if assim_temp
 			for (i, index)=enumerate(obs_temperature_indiceswithdata)
 				tempvar_temperature_res[i] = obs_temperature[index] - (model_temperature[index] + T0)
 			end
 			llik_temp = loglar1(tempvar_temperature_res, σ_temp, ρ_temp)
-#			resid_temp = obs.temp[oidx.temp] - (model.out$temp[midx.temp]+T0)
-#			llik.temp = logl.ar1(resid.temp, sigma.temp, rho.temp) # AR(1)
 		end
 
 		llik_ocheat = 0.
-		if assim_ocheat #& !is.null(oidx.ocheat)) {
+		if assim_ocheat
 			for (i, index)=enumerate(obs_ocheat_indiceswithdata)
 				tempvar_ocheat_res[i] = obs_ocheat[index] - (model_ocheat[index] + H0)
 			end
 			llik_ocheat = loglar1(tempvar_ocheat_res, σ_ocheat, ρ_ocheat)
-
-			#resid.ocheat = obs.ocheat[oidx.ocheat] - (model.out$ocheat[midx.ocheat]+H0)
-			#llik.ocheat = logl.ar1(resid.ocheat, sigma.ocheat, rho.ocheat) # AR(1)
 		end
 
 		llik_co2inst = 0.
-		if assim_co2inst # & !is.null(oidx.co2inst)) {
+		if assim_co2inst
 			for (i, index)=enumerate(obs_co2inst_indiceswithdata)
 				tempvar_co2inst_res[i] = obs_co2inst[index] - model_co2[index]
 			end
 			llik_co2inst = loglar1(tempvar_co2inst_res, σ_co2inst, ρ_co2inst)
 		end
 
-		#resid.co2inst = obs.co2inst[oidx.co2inst] - model.out$co2[midx.co2inst]
-		#llik.co2inst = logl.ar1(resid.co2inst, sigma.co2inst, rho.co2inst) # AR(1)
+        llik_co2ice = 0.
+        if assim_co2ice
+            for (i, index)=enumerate(obs_co2ice_indiceswithdata)
+                mean_co2ice[i] = mean(model_co2[index + (-4:3)])
+                llik_co2ice = llik_co2ice + logpdf(Normal(mean_co2ice[i], σ_co2ice), obs_co2ice[index])
+            end
+        end
 
-		#llik_co2ice = 0.
-		#if assim.co2ice #& !is.null(oidx.co2ice)) {
-		#mod.co2ice = rep(NA,length(midx.co2ice))
-		#for(i in 1:length(midx.co2ice))
-		#	mod.co2ice[i] = mean(model.out$co2[midx.co2ice[i] + -4:3]) # mean of 8 years centered on ice core observation
-		#llik.co2ice = sum(dnorm(obs.co2ice[oidx.co2ice], mod.co2ice, sigma.co2ice, log=TRUE))
-		#}
-
-		#llik.ocflux = 0
-		#if(assim.ocflux & !is.null(oidx.ocflux))
-		#	llik.ocflux = sum(dnorm(obs.ocflux[oidx.ocflux], model.out$ocflux[midx.ocflux], obs.ocflux.err[oidx.ocflux], log=TRUE))
+        llik_ocflux = 0.
+        if assim_ocflux
+            for (i,index) = enumerate(obs_ocflux_indiceswithdata)
+                llik_ocflux =  llik_ocflux + logpdf(Normal(atm_oc_flux[index], obs_ocflux_err[index]), obs_ocflux[index])
+            end
+        end
 
 		#llik.moc = 0
 		#if(assim.moc & !is.null(oidx.moc))
@@ -223,7 +236,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
 		#llik = llik.temp + llik.ocheat + llik.co2inst + llik.co2inst + llik.co2ice + llik.ocflux + llik.moc # assume the residual time series are independent
 
-		llik = llik_temp + llik_ocheat + llik_co2inst
+		llik = llik_temp + llik_ocheat + llik_co2inst + llik_co2ice + llik_ocflux
 
 		return llik
 	end
