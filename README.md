@@ -4,50 +4,22 @@ This is an implementation of SNEASY in Julia. Everything is experimental at this
 
 ## Requirements
 
-The minimum requirement to run SNEASY is [Julia](http://julialang.org/) and the [Mimi](https://bitbucket.org/davidanthoff/mimi.jl) package. To plot you should also install the [Gadfly](https://github.com/dcjones/Gadfly.jl) package. To run the example IJulia notebook file you need to install [IJulia](https://github.com/JuliaLang/IJulia.jl).
+The minimum requirement to run SNEASY.jl is [Julia](http://julialang.org/) and the [Mimi](https://bitbucket.org/davidanthoff/mimi.jl) package. To plot you should also install the [Gadfly](https://github.com/dcjones/Gadfly.jl) package. To run the example IJulia notebook file you need to install [IJulia](https://github.com/JuliaLang/IJulia.jl).
 
-### Installing Julia
+## Getting started
 
-You can download Julia from [http://julialang.org/downloads/](http://julialang.org/downloads/). You should use the latest v0.3.x version and install it.
+``examples/sneasy_demo.ipynb`` contains a simple example of how to run SNEASY.jl. It requires a working IJulia installation to run.
 
-### Installing the Mimi package
+``src/main.jl`` runs SNEASY.jl once and is a good starting point to understand the code.
 
-Start Julia and enter the following command on the Julia prompt:
+## Folder structure
 
-````julia
-Pkg.add("Mimi")
-````
+The ``src`` folder has all the model code.
 
-### Installing Gadfly (optional)
+The ``calibration`` folder has the MCMC assimilation code. The code there can assimilate both the original Fortran implementation of SNEASY and SNEASY.jl.
 
-[Gadfly](https://github.com/dcjones/Gadfly.jl) is one of many Julia plotting packages. To install it, start Julia and enter the following command on the Julia prompt:
+The ``data`` folder has data files that are needed to run SNEASY. It does *not* contain the data files that are used as observational constraints, those are located in the ``calibration/data`` folder.
 
-````julia
-Pkg.add("Gadfly")
-````
+The ``examples`` folder has some example code that uses SNEASY.jl.
 
-### Installing IJulia (optional)
-
-[IJulia](https://github.com/JuliaLang/IJulia.jl) provides the excellent [IPython](http://ipython.org/) interface for the Julia language. Installation is a two step procedure:
-
-First, you need a working IPython installation. The Anaconda distribution [(http://continuum.io/downloads)](http://continuum.io/downloads) is currently the easiest way to install IPython.
-
-Second, start Julia, then enter the following command on the Julia prompt:
-
-````julia
-Pkg.add("IJulia")
-````
-
-To start the IJulia notebook, open a normal command prompt (not Julia), change to the directory with the SNEASY source code and enter the following command:
-
-````
-ipython notebook --profile julia
-````
-
-### Keeping requirements up-to-date (optional)
-
-Many of these requirements are regularily updated. To make sure you have the latest versions, periodically execute the following command on the Julia prompt:
-
-````jl
-Pkg.update()
-````
+The ``test`` folder has code that cross checks the julia implementation of SNEASY with the Fortran implementation.
