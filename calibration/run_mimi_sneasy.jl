@@ -35,20 +35,15 @@ function construct_run_mimi_sneasy()
         setparameter(m, :ccm, :Beta, beta)
         setparameter(m, :ccm, :Eta, eta)
         setparameter(m, :ccm, :atmco20, init_CO2)
-        setparameter(m, :radforc, :alpha, alpha)
-
         setparameter(m, :ccm, :CO2_emissions, co2_emissions)
-        setparameter(m, :radforc, :forcing_other, zeros(n))
-        setparameter(m, :radforc, :forcing_volcanic, zeros(n))
-        setparameter(m, :radforc, :forcing_solar, zeros(n))
-        setparameter(m, :radforc, :forcing_ghg_nonco2, rf_nonco2)
-        setparameter(m, :radforc, :forcing_aerosol_direct, rf_aerosol)
-        setparameter(m, :radforc, :forcing_aerosol_indirect, zeros(n))
+        setparameter(m, :radiativeforcing, :alpha, alpha)
+        setparameter(m, :radiativeforcing, :rf_other, rf_nonco2)
+        setparameter(m, :radiativeforcing, :rf_aerosol, rf_aerosol)
 
         run(m)
 
         MOC_strength[:] = NaN
-        radiative_forc[:] = m[:radforc, :rf]
+        radiative_forc[:] = m[:radiativeforcing, :rf]
         ATM_CO2[:] = m[:ccm, :atmco2]
         atm_oc_flux[:] = m[:ccm, :atm_oc_flux]
         GL_surface_temp[:] = m[:doeclim, :temp]
