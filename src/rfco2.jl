@@ -7,7 +7,7 @@ using Mimi
     rf_co2 = Variable(index=[time])
 end
 
-function timestep(s::rfco2, t::Int)
+function run_timestep(s::rfco2, t::Int)
     v = s.Variables
     p = s.Parameters
 

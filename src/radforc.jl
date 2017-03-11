@@ -19,7 +19,7 @@ using Mimi
     rf = Variable(index=[time])
 end
 
-function timestep(s::radforc, t::Int)
+function run_timestep(s::radforc, t::Int)
     v = s.Variables
     p = s.Parameters
 

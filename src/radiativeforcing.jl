@@ -11,7 +11,7 @@ using Mimi
     rf = Variable(index=[time])
 end
 
-function timestep(s::radiativeforcing, t::Int)
+function run_timestep(s::radiativeforcing, t::Int)
     v = s.Variables
     p = s.Parameters
 

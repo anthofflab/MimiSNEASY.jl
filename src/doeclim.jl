@@ -239,7 +239,7 @@ function init(s::doeclim)
     v.Adoe[2,2] = 1 - p.deltat/(2.*v.taucfs) - p.deltat/(2.*v.tauksl)*bsi + v.Ker[s.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
 end
 
-function timestep(s::doeclim, n::Int)
+function run_timestep(s::doeclim, n::Int)
     p = s.Parameters
     v = s.Variables
 #  ==========================================================================

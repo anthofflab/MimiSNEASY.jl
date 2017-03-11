@@ -84,7 +84,7 @@ function init(s::ccm)
     v.ocanom[1,4] = 0
 end
 
-function timestep(s::ccm, t::Int)
+function run_timestep(s::ccm, t::Int)
     p = s.Parameters
     v = s.Variables
 
