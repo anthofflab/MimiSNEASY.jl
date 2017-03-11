@@ -162,7 +162,7 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     end
 
     # Then interpolate the result in the temperature direction.
-    if templox == temphix then
+    if templox == temphix
         frac_in_ocean = FIO_tlo
     else
         frac_in_ocean = (FIO_thi - FIO_tlo) * (tempx-templox) / real(temphix-templox) + FIO_tlo
