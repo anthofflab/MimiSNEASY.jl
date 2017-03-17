@@ -1,0 +1,97 @@
+  SNEASY: Simple Nonlinear EArth SYstem model
+  Copyright (C) 2010  Klaus Keller, Nathan Urban, and Brian Tuttle 
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+    Klaus Keller, klaus@psu.edu
+    Nathan Urban, nurban@princeton.edu
+    Brian Tuttle, btuttle@psu.edu
+
+ ========================================
+| For the impatient:                     |
+|  1. On Linux type make                 |
+|     On MacOS type make -f Makefile.mac |
+|  2. Type ./SNEASY                      |
+|  3. Start Matlab                       |
+|  4. Type viewESys                      |
+ ========================================
+
+Required software:
+    Fortran90 compiler
+    GNU make
+    Matlab or R to visualize output
+
+ =============================================================================
+| To use the Earth System model or DOECLIM as a shared library with R:
+|  1. Be sure that -fPIC is enabled as a compiler flag in the Makefile.
+|  2. Type 'make sneasy.so' or 'make doeclim.so' (without quotes).
+|     On MacOS type 'make -f Makefile.mac sneasy.so'
+|  3. Start R.
+|  4. Type 'source("sneasy_demo.R")' or 'source("doeclim_demo.R")'
+ =============================================================================
+
+Credits:
+mt19937ar.f90: 
+    Mersenne Twister random number generator
+    A C-program for MT19937, with initialization improved 2002/1/26.
+    Copyright (C) 1997, 2002 Makoto Matsumoto and Takuji Nishimura
+    Code converted to Fortran 95 by Josi Rui Faustino de Sousa 2002-02-01
+    www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/VERSIONS/FORTRAN/fortran.html
+
+moc_boxmodel.f90:
+   original author: Kirsten Zickfeld
+   received by Klaus Keller April 30, 2003
+   Modified 6/22/05 by K. Brennan to delay warming by 50 years and
+      add noise to overturning (=m*fact).  
+   Modified 1/5/07 by N. Urban to add noise to surface temperatures and 
+      salinity instead of to overturning.
+   Modified 1/31/07 by N. Urban to accept temperature forcing as an argument
+      rather than hardcoding a linear->constant trend.
+   Translated 8/27/08 by Brian Tuttle <btuttle@psu.edu> from Matlab to
+      Fortran 90 module.
+
+CCM.f90:
+   Nonlinear impulse response carbon/climate model
+   based on the NICCS model from Hooss et al. (2001)
+   original version by DMRicciuto 7/16/2004
+  
+   See model details in:
+     Ricciuto, D. M., K. J. Davis, and K. Keller (2008), A Bayesian calibration 
+         of a simple carbon cycle model: The role of observations in estimating 
+         and reducing uncertainty, Global Biogeochem. Cycles, 22, GB2030, 
+         doi:10.1029/2006GB002908.
+
+doeclim.f90:
+  Simple climate model DOECLIM
+ 
+  calculates sea surface and land air temperature response to radiative forcing
+  based on an energy balance model with 1-D diffusion ocean
+ 
+  Constructed by Elmar Kriegler (EK),
+  Potsdam Institute for Climate Impact Research
+  Date: 06.02.2005
+ 
+  References for the historical forcing values can be found in (Reference EK05):
+  Kriegler, E (2005) Imprecise probability analysis for integrated assessment
+  of climate change. Ph.D. thesis. University of Potsdam, 256 pp.
+  opus.kobv.de/ubp/volltexte/2005/561/
+ 
+  Model equations are described in EK05 and (Reference TK07):
+  Tanaka, K, Kriegler, E, Bruckner, T, Hooss, G, Knorr, W, Raddatz, T (2007)
+  Aggregated carbon cycle, atmospheric chemistry, and climate model (ACC2):
+  Description of the forward and inverse modes, Reports on Earth System Science
+  40/2007,
+  Max Planck Institute for Meteorology, Hamburg, 199 pp.
+  www.mpimet.mpg.de/fileadmin/publikationen/Reports/BzE_40.pdf
