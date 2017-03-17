@@ -1,0 +1,76 @@
+# Fortran compiler:
+F90 = gfortran # g95
+
+# Directories: objpath, srcpath
+OP = ./obj
+SP = ./src
+
+# Compiler flags:
+Optimization = -O3
+SOFlags = -fPIC -fno-range-check
+Modpath = -J $(OP)
+Flags = ${SOFlags} ${Optimization} $(Modpath)
+
+# Preprocessor options:
+CPP = cpp
+CPPFLAGS = -DMOC_NOISE
+
+#The main program
+SNEASY: $(OP)/main.o $(OP)/sneasy.o $(OP)/global.o $(OP)/moc_boxmodel.o $(OP)/CCM.o $(OP)/doeclim.o $(OP)/mt19937ar.o $(OP)/rndseed.o 
+	$(F90) -o $@ $(Flags) $(Incl) $^
+
+doeclim.dll: $(OP)/global.o $(OP)/doeclim.o $(OP)/run_doeclim.o
+	$(F90) -o $@ $(Flags) -shared $(Incl) $^
+
+ccm.dll: $(OP)/global.o $(OP)/CCM.o $(OP)/run_ccm.o
+	$(F90) -o $@ $(Flags) -shared $(Incl) $^
+
+sneasy.dll: $(OP)/global.o $(OP)/sneasy.o $(OP)/CCM.o $(OP)/doeclim.o $(OP)/moc_boxmodel.o $(OP)/rndseed.o $(OP)/mt19937ar.o $(OP)/run_sneasy.o
+	$(F90) -o $@ $(Flags) -shared $(Incl) $^
+
+#Object files
+$(OP)/main.o: $(OP)/global.o $(OP)/sneasy.o $(OP)/CCM.o $(OP)/doeclim.o $(SP)/main.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/main.f90 -o $@
+
+$(OP)/run_sneasy.o: $(OP)/global.o $(OP)/sneasy.o $(OP)/doeclim.o $(OP)/CCM.o $(SP)/run_sneasy.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/run_sneasy.f90 -o $@
+
+$(OP)/sneasy.o: $(OP)/global.o $(OP)/doeclim.o $(OP)/CCM.o $(OP)/moc_boxmodel.o $(OP)/mt19937ar.o $(OP)/rndseed.o $(SP)/sneasy.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/sneasy.f90 -o $@
+
+$(OP)/run_doeclim.o: $(OP)/global.o $(SP)/run_doeclim.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/run_doeclim.f90 -o $@
+
+$(OP)/run_ccm.o: $(OP)/global.o $(SP)/run_ccm.f90
+		$(F90) -c $(Flags) $(Incl) $(SP)/run_ccm.f90 -o $@
+
+$(OP)/doeclim.o: $(OP)/global.o $(SP)/doeclim.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/doeclim.f90 -o $@
+
+$(OP)/CCM.o: $(OP)/global.o $(SP)/CCM.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/CCM.f90 -o $@
+
+$(OP)/moc_boxmodel.o: $(OP)/global.o $(OP)/rndseed.o $(OP)/moc_boxmodel.F90
+	$(F90) -c $(Flags) $(Incl) $(OP)/moc_boxmodel.F90 -o $@
+
+$(OP)/rndseed.o:  $(OP)/global.o $(OP)/mt19937ar.o $(SP)/rndseed.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/rndseed.f90 -o $@
+
+$(OP)/mt19937ar.o:  $(SP)/mt19937ar.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/mt19937ar.f90 -o $@
+
+$(OP)/global.o: $(SP)/global.f90
+	$(F90) -c $(Flags) $(Incl) $(SP)/global.f90 -o $@
+
+# Preprocessing objects:
+$(OP)/moc_boxmodel.F90: $(SP)/moc_boxmodel.f90
+	$(CPP) $(CPPFLAGS) $(SP)/moc_boxmodel.f90 > $@
+
+.PHONY: clean export
+
+#Cleaning up
+clean:
+	rm -f $(OP)/*.o $(OP)/*.mod $(OP)/*.F90 
+
+export:
+	tar -c -z -C .. -v -T tarincl -f SNEASY.tgz

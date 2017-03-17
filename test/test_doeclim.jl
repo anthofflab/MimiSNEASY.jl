@@ -2,12 +2,12 @@ using Base.Test
 using Mimi
 using DataFrames
 
-include("../../sneasy/julia/sneasy.jl")
+include("../sneasy_fortran/julia/sneasy.jl")
 include("../src/doeclim.jl")
 
-df = readtable("../../sneasy/data/forcing_rcp85.txt", separator=' ');
-df = DataFrame(year=df[:year], rf=df[:co2]+df[:aerosol_direct]+df[:aerosol_indirect]+df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other]);
-total_forcing = convert(Array, df[:rf]);
+df = readtable("../sneasy_fortran/data/forcing_rcp85.txt", separator=' ')
+df = DataFrame(year=df[:year], rf=df[:co2]+df[:aerosol_direct]+df[:aerosol_indirect]+df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other])
+total_forcing = convert(Array, df[:rf])
 
 deltat = 1.0
 
@@ -43,10 +43,10 @@ end
 #	format for run_fortran_doeclim = run_fortran_doeclim(t2co, Kappa, radiative_forcing)
 
 #Run Mimi Verseion of doeclim
-m_temp, m_heatflux_mixed, m_heatflux_interior = mimidoeclim(2.0, 1.1, total_forcing);
+m_temp, m_heatflux_mixed, m_heatflux_interior = mimidoeclim(2.0, 1.1, total_forcing)
 
 #Run fortran version of doeclim
-f_temp, f_heatflux_mixed, f_heatflux_interior = run_fortran_doeclim(2.0, 1.1, total_forcing);
+f_temp, f_heatflux_mixed, f_heatflux_interior = run_fortran_doeclim(2.0, 1.1, total_forcing)
 
 
 #Test Precision

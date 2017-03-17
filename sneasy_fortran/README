@@ -1,0 +1,22 @@
+The following was tested on Red Hat Enterprise Linux 5 with version 11.1 of
+the Intel Fortran Compiler (ifort) and R 2.14.0 -- you will likely need to
+make adjustments for success on other systems.
+
+(1) Build the SNEASY shared library:
+
+    $ cd sneasy
+    $ make sneasy.so
+
+(2) Run the assimilation:
+    
+    $ cd ../R
+    $ Rscript climassim.R
+
+The second step may take 30 minutes or more to complete, depending on your
+hardware.  You should end up with two PDF files, each containing a panel of
+plots, in the 'R' subdirectory and four '.RData' files in 'output'
+subdirectory.  Additional plots are possible using other scripts in the 'R'
+subdirectory.
+
+
+Last modified Fri 21 Sep 2012 @ 15:44:49 EDT by Rob Nicholas.
