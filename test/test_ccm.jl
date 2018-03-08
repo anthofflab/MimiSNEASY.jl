@@ -6,11 +6,11 @@ using Distributions
 include("../../sneasy/julia/sneasy.jl")
 include("../src/ccm.jl")
 
-df = readtable("../../sneasy/data/RCP85_EMISSIONS.csv");
+df = readtable(joinpath(@__DIR__, "..", "..", "sneasy", "data", "RCP85_EMISSIONS.csv"));
 co2_forcing = convert(Array, (df[:FossilCO2] + df[:OtherCO2]));
 
 #Load Ocean anomaly table (need to use transpose)
-anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
+anomtable = readdlm(joinpath(@__DIR__, "..", "..", "sneasy", "sneasy", "anomtable.txt"));
 
 #Create a temperature forcing file with the appropriate length
 srand(123);
