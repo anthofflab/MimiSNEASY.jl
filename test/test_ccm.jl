@@ -14,7 +14,7 @@ anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
 
 #Create a temperature forcing file with the appropriate length
 srand(123);
-temp_forcing = Float64[0.8 * (1+0.0025)^t + srand(Normal(0., 0.2), 1)[1] for t = 1:length(co2_forcing)];
+temp_forcing = Float64[0.8 * (1+0.0025)^t + rand(Normal(0., 0.2), 1)[1] for t = 1:length(co2_forcing)];
 
 deltat = 1.0
 
