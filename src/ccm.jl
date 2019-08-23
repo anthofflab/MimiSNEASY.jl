@@ -46,13 +46,19 @@ const n4 = 6.32
 const npp0 = 60.0             # [GtC/yr]
 
 @defcomp ccm begin
+    anom_row = Index()
+    anom_col = Index()
+
     deltat = Parameter()
     Q10 = Parameter()
     Beta = Parameter()
     Eta = Parameter() #default 16.88,   diffusion coeffs [m/yr]
     temp = Parameter(index=[time])
     CO2_emissions = Parameter(index=[time])
-    anomtable::Array{Float64,2} = Parameter()
+    oxidised_CH₄_to_CO₂          =Parameter(index=[time]) #CO2 emissions form CH4 oxidation
+
+    # Set anomtable to be a parameter, indexed by anom_row and anom_col
+    anomtable = Parameter(index =[anom_row, anom_col])
 
     tpools = Variable(index=[time,4])
     ocanom = Variable(index=[time,4])
@@ -111,7 +117,7 @@ function run_timestep(s::ccm, t::Int)
         end
     end
 
-    netemissions = p.CO2_emissions[t] + v.landflux[t]
+    netemissions = p.CO2_emissions[t] + v.landflux[t] + p.oxidised_CH₄_to_CO₂[t]
 
     # Find fracinoc using the ocean anomaly table.
     fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
