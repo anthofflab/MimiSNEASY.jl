@@ -1,0 +1,18 @@
+name = "MimiSNEASY"
+uuid = "3f1801d0-c5f8-11e9-1568-bf13fd643260"
+version = "0.1.0-DEV"
+
+[deps]
+Mimi = "e4e893b0-ee5e-52ea-8111-44b3bdec128c"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+CSVFiles = "5d742f6a-9f54-50ce-8119-2520741973ca"
+
+[compat]
+Mimi = "0.9"
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

@@ -1,11 +1,12 @@
+module MimiSNEASY
 
 using Mimi
 using DataFrames
 
-include("doeclim.jl")
-include("ccm.jl")
-include("radiativeforcing.jl")
-include("rfco2.jl")
+include("components/doeclim.jl")
+include("components/ccm.jl")
+include("components/radiativeforcing.jl")
+include("components/rfco2.jl")
 
 function getsneasy(;nsteps=736)
     m = Model()
@@ -70,4 +71,6 @@ function getsneasy(;nsteps=736)
     connectparameter(m, :radiativeforcing, :rf_co2, :rfco2, :rf_co2)
 
     return m
+end
+
 end
