@@ -135,7 +135,6 @@ function run_timestep(s::ccm, t::Int)
         end
 
         # Compute flux into ocean
-        # OLD v.atm_oc_flux[t] = -((v.ocanom[t+1,1]-v.ocanom[t,1])*fracinoc + v.ocanom[t+1,2]-v.ocanom[t,2]+v.ocanom[t+1,3]-v.ocanom[t,3] + v.ocanom[t+1,4]-v.ocanom[t,4]) / p.deltat
         v.atm_oc_flux[t] = ((v.ocanom[t+1,2] + v.ocanom[t+1,3] + v.ocanom[t+1,4]) + v.ocanom[t+1,1] * fracinoc - ((v.ocanom[t,2] + v.ocanom[t,3] + v.ocanom[t,4]) + v.ocanom[t,1] * fracinoc)) / p.deltat
 
         v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
