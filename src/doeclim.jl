@@ -42,7 +42,7 @@
 #   flnd    land fraction
 #   fso     ocean frac. area below 60m
 #   kcon    conversion factor [cm2/s->m2/a]
-#   q2co    2xCo2 forcing increase [W/m^2]
+#   F2x_CO₂ forcing increase from CO2 doubling [W/m^2]
 #   rlam    clim senv. over land enhancement
 #   zbot    depth of interior ocean
 #
@@ -54,7 +54,6 @@
 #   heatflux_interior:  heat uptake of the interior ocean (W/m^2)
 #
 # ==============================================================================
-module doeclimcomponent
 using Mimi
 
 const ak   = 0.31
@@ -66,7 +65,6 @@ const csw  = 0.13
 const flnd = 0.29
 const fso  = 0.95
 const kcon = 3155.8
-const q2co = 3.7
 const rlam = 1.43
 const zbot = 4000
 const earth_area = 5100656e8      # [m^2]
@@ -79,6 +77,7 @@ const secs_per_Year = 31556926.0
     # vertical ocean diffusivity (cm^2 s^-1); default = 0.55
     kappa = Parameter()
     forcing = Parameter(index=[time])
+    F2x_CO₂ = Parameter(default=3.7)
 
     temp = Variable(index=[time])
     temp_landair = Variable(index=[time])
@@ -131,15 +130,15 @@ function init(s::doeclim)
 
     # climate feedback strength over land
 
-    cfl = flnd *cnum/cden*q2co/p.t2co-bk*(rlam-bsi)/cden
+    cfl = flnd *cnum/cden*p.F2x_CO₂/p.t2co-bk*(rlam-bsi)/cden
 
     # climate feedback strength over ocean
 
-    cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi)) * cnum / cden * q2co / p.t2co + rlam * flnd / (1.-flnd) * bk * (rlam - bsi) / cden
+    cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi)) * cnum / cden * p.F2x_CO₂ / p.t2co + rlam * flnd / (1.-flnd) * bk * (rlam - bsi) / cden
 
     # land-sea heat exchange coefficient
 
-    kls = bk * rlam * flnd / cden - ak * flnd * cnum / cden * q2co / p.t2co
+    kls = bk * rlam * flnd / cden - ak * flnd * cnum / cden * p.F2x_CO₂ / p.t2co
 
     # interior ocean warming time scale
 
@@ -323,6 +322,7 @@ function run_timestep(s::doeclim, n::Int)
 
         v.heat_interior[n] = v.heat_interior[n-1] + v.heatflux_interior[n] * (fso*v.powtoheat*p.deltat)
 
+        v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
     else
 
         # handle initial values
@@ -346,10 +346,6 @@ function run_timestep(s::doeclim, n::Int)
 
         v.heat_mixed[1] = 0.0
         v.heat_interior[1] = 0.0
+        v.temp[1] = 0.0
     end
-
-    v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
-
-end
-
 end
