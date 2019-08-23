@@ -27,7 +27,6 @@
 #               computed temperature forcing.
 #------------------------------------------------------------------------------
 
-module ccmcomponent
 using Mimi
 
 # Define factors used in the calculation.
@@ -169,6 +168,4 @@ function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
     end
 
     return frac_in_ocean
-end
-
 end
