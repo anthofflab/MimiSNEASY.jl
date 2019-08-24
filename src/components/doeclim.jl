@@ -161,25 +161,25 @@ const secs_per_Year = 31556926.0
     
         # Zeroth Order
     
-        v.KT0[s.nsteps] = 4-2*sqrt(2.)
+        v.KT0[end] = 4-2*sqrt(2.)
     
         # First Order
     
-        v.KTA1[s.nsteps] = -8*exp(-v.taubot/p.deltat) + 4*sqrt(2.)*exp(-0.5*v.taubot/p.deltat)
+        v.KTA1[end] = -8*exp(-v.taubot/p.deltat) + 4*sqrt(2.)*exp(-0.5*v.taubot/p.deltat)
     
-        v.KTB1[s.nsteps] = 4*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(0.5*v.taubot/p.deltat)) - 2*erf(sqrt(v.taubot/p.deltat)))
+        v.KTB1[end] = 4*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(0.5*v.taubot/p.deltat)) - 2*erf(sqrt(v.taubot/p.deltat)))
     
         # Second order
     
-        v.KTA2[s.nsteps] =  8*exp(-4*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2*v.taubot/p.deltat)
+        v.KTA2[end] =  8*exp(-4*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2*v.taubot/p.deltat)
     
-        v.KTB2[s.nsteps] = -8*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(2*v.taubot/p.deltat)) - 2*erf(2*sqrt(v.taubot/p.deltat)) )
+        v.KTB2[end] = -8*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(2*v.taubot/p.deltat)) - 2*erf(2*sqrt(v.taubot/p.deltat)) )
     
         # Third Order
     
-        v.KTA3[s.nsteps] = -8*exp(-9*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
+        v.KTA3[end] = -8*exp(-9*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
     
-        v.KTB3[s.nsteps] = 12*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2*erf(3*sqrt(v.taubot/p.deltat)) )
+        v.KTB3[end] = 12*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2*erf(3*sqrt(v.taubot/p.deltat)) )
     
         # Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
         # Switched on (To switch off, comment out lines below)
@@ -196,41 +196,44 @@ const secs_per_Year = 31556926.0
         v.Baux[2,1] = -p.deltat/(2*v.tauksl)+v.Cdoe[2,1]
         v.Baux[2,2] = 1. + p.deltat/(2*v.taucfs) + p.deltat/(2*v.tauksl)*bsi + 2*fso*sqrt(p.deltat/v.taudif)+v.Cdoe[2,2]
     
-        v.IB=inv(v.Baux)
+        v.IB[:] = inv(v.Baux)
+
+        # TODO find better solution
+        nsteps = length(v.Ker)
     
-        for i = 1:s.nsteps-1
+        for i = 1:nsteps-1
     
             # Zeroth Order
     
-            v.KT0[i] = 4*sqrt(Float64(s.nsteps+1-i)) - 2*sqrt(Float64(s.nsteps+2-i)) - 2*sqrt(Float64(s.nsteps-i))
+            v.KT0[i] = 4*sqrt(Float64(nsteps+1-i)) - 2*sqrt(Float64(nsteps+2-i)) - 2*sqrt(Float64(nsteps-i))
     
             # First Order
     
-            v.KTA1[i] = -8*sqrt(Float64(s.nsteps+1-i)) * exp(-v.taubot/p.deltat/(s.nsteps+1-i)) + 4*sqrt(Float64(s.nsteps+2-i)) *exp(-v.taubot/p.deltat/(s.nsteps+2-i)) + 4*sqrt(Float64(s.nsteps-i)) *exp(-v.taubot/p.deltat/(s.nsteps-i))
+            v.KTA1[i] = -8*sqrt(Float64(nsteps+1-i)) * exp(-v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i)) *exp(-v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i)) *exp(-v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
+            v.KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
     
             # Second Order
     
-            v.KTA2[i] =  8*sqrt(Float64(s.nsteps+1-i)) * exp(-4*v.taubot/p.deltat/(s.nsteps+1-i))- 4*sqrt(Float64(s.nsteps+2-i))*exp(-4*v.taubot/p.deltat/(s.nsteps+2-i))- 4*sqrt(Float64(s.nsteps-i)) * exp(-4*v.taubot/p.deltat/(s.nsteps-i))
+            v.KTA2[i] =  8*sqrt(Float64(nsteps+1-i)) * exp(-4*v.taubot/p.deltat/(nsteps+1-i))- 4*sqrt(Float64(nsteps+2-i))*exp(-4*v.taubot/p.deltat/(nsteps+2-i))- 4*sqrt(Float64(nsteps-i)) * exp(-4*v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB2[i] = -8*sqrt(pi*v.taubot/p.deltat) * (erf(2*sqrt(v.taubot/p.deltat/(Float64(s.nsteps-i)))) + erf(2*sqrt(v.taubot/p.deltat/Float64(s.nsteps+2-i))) -       2*erf(2*sqrt(v.taubot/p.deltat/Float64(s.nsteps+1-i))) )
+            v.KTB2[i] = -8*sqrt(pi*v.taubot/p.deltat) * (erf(2*sqrt(v.taubot/p.deltat/(Float64(nsteps-i)))) + erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+2-i))) -       2*erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+1-i))) )
     
             # Third Order
     
-            v.KTA3[i] = -8*sqrt(Float64(s.nsteps+1-i)) *exp(-9*v.taubot/p.deltat/(s.nsteps+1-i)) + 4*sqrt(Float64(s.nsteps+2-i))*exp(-9*v.taubot/p.deltat/(s.nsteps+2-i)) + 4*sqrt(Float64(s.nsteps-i))*exp(-9*v.taubot/p.deltat/(s.nsteps-i))
+            v.KTA3[i] = -8*sqrt(Float64(nsteps+1-i)) *exp(-9*v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i))*exp(-9*v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i))*exp(-9*v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB3[i] = 12*sqrt(pi*v.taubot/p.deltat) * (erf(3*sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(3*sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2*erf(3*sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
+            v.KTB3[i] = 12*sqrt(pi*v.taubot/p.deltat) * (erf(3*sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(3*sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(3*sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
         end
     
-        for i=1:s.nsteps
+        for i=1:nsteps
             v.Ker[i] = v.KT0[i]+v.KTA1[i]+v.KTB1[i]+v.KTA2[i]+v.KTB2[i]+v.KTA3[i]+v.KTB3[i]
         end
-    
+
         v.Adoe[1,1] = 1 - p.deltat/(2*v.taucfl) - p.deltat/(2*v.taukls) + v.Cdoe[1,1]
         v.Adoe[1,2] =  p.deltat/(2*v.taukls)*bsi + v.Cdoe[1,2]
         v.Adoe[2,1] =  p.deltat/(2*v.tauksl) + v.Cdoe[2,1]
-        v.Adoe[2,2] = 1 - p.deltat/(2*v.taucfs) - p.deltat/(2*v.tauksl)*bsi + v.Ker[s.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
+        v.Adoe[2,2] = 1 - p.deltat/(2*v.taucfs) - p.deltat/(2*v.tauksl)*bsi + v.Ker[nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
     end
     
     function run_timestep(p, v, d, n)
@@ -258,12 +261,15 @@ const secs_per_Year = 31556926.0
     #  ==========================================================================#
         DTE1 = v.temp_landair
         DTE2 = v.temp_sst
+
+        # TODO find better solution
+        nsteps = length(v.Ker)
     
         # assume land and ocean forcings are equal to global forcing
         QL = p.forcing
         Q0 = p.forcing
-    
-        if n>1
+
+        if !is_first(n)
             DelQL = QL[n] - QL[n-1]
             DelQ0 = Q0[n] - Q0[n-1]
     
@@ -286,8 +292,10 @@ const secs_per_Year = 31556926.0
             # Calculate temperatures
             DPAST1 = 0.0
             DPAST2 = 0.0
-            for i=1:n-1
-                DPAST2 = DPAST2+DTE2[i]*v.Ker[s.nsteps-n+i]
+
+            # TODO convert this to proper timestep handling
+            for i=1:n.t-1
+                DPAST2 = DPAST2+DTE2[i]*v.Ker[nsteps-n.t+i]
             end
     
             DPAST2 = DPAST2*fso * sqrt(p.deltat/v.taudif)
@@ -306,8 +314,8 @@ const secs_per_Year = 31556926.0
             v.heatflux_mixed[n] = cas*( DTE2[n]-DTE2[n-1] )
     
             v.heatflux_interior[n] = 0.
-            for i=1:n-1
-                v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[s.nsteps-n+1+i]
+            for i=1:n.t-1
+                v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[nsteps-n.t+1+i]
             end
             v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2*DTE2[n] - v.heatflux_interior[n])
     
