@@ -103,7 +103,7 @@ const npp0 = 60.0             # [GtC/yr]
         v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
         v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
     
-        if t<s.nsteps
+        if !is_last(t)
             for i=1:4
                 v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
             end
@@ -121,7 +121,7 @@ const npp0 = 60.0             # [GtC/yr]
         v.Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
         v.Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
     
-        if t<s.nsteps
+        if !is_last(t)
             for i=1:4
                 v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
             end
