@@ -134,7 +134,7 @@ function init(s::doeclim)
 
     # climate feedback strength over ocean
 
-    cfs = (rlam * flnd - ak / (1.-flnd) * (rlam-bsi)) * cnum / cden * p.F2x_CO₂ / p.t2co + rlam * flnd / (1.-flnd) * bk * (rlam - bsi) / cden
+    cfs = (rlam * flnd - ak / (1-flnd) * (rlam-bsi)) * cnum / cden * p.F2x_CO₂ / p.t2co + rlam * flnd / (1-flnd) * bk * (rlam - bsi) / cden
 
     # land-sea heat exchange coefficient
 
@@ -158,7 +158,7 @@ function init(s::doeclim)
 
     # sea-land heat exchange time scale
 
-    v.tauksl  = (1.-flnd) * cas / kls
+    v.tauksl  = (1-flnd) * cas / kls
 
     # land-sea heat exchange time scale
 
@@ -176,30 +176,30 @@ function init(s::doeclim)
 
     # Second order
 
-    v.KTA2[s.nsteps] =  8*exp(-4.*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2.*v.taubot/p.deltat)
+    v.KTA2[s.nsteps] =  8*exp(-4*v.taubot/p.deltat) - 4*sqrt(2.)*exp(-2*v.taubot/p.deltat)
 
-    v.KTB2[s.nsteps] = -8*sqrt(pi*v.taubot/p.deltat) * (1.+ erf(sqrt(2.*v.taubot/p.deltat)) - 2.*erf(2.*sqrt(v.taubot/p.deltat)) )
+    v.KTB2[s.nsteps] = -8*sqrt(pi*v.taubot/p.deltat) * (1+erf(sqrt(2*v.taubot/p.deltat)) - 2*erf(2*sqrt(v.taubot/p.deltat)) )
 
     # Third Order
 
-    v.KTA3[s.nsteps] = -8.*exp(-9.*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
+    v.KTA3[s.nsteps] = -8*exp(-9*v.taubot/p.deltat) + 4*sqrt(2.)*exp(-4.5*v.taubot/p.deltat)
 
-    v.KTB3[s.nsteps] = 12.*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2.*erf(3.*sqrt(v.taubot/p.deltat)) )
+    v.KTB3[s.nsteps] = 12*sqrt(pi*v.taubot/p.deltat) * (1 +erf(sqrt(4.5*v.taubot/p.deltat)) - 2*erf(3*sqrt(v.taubot/p.deltat)) )
 
     # Hammer and Hollingsworth correction (Equation 2.3.27, TK07):
     # Switched on (To switch off, comment out lines below)
-    v.Cdoe[1,1] = (1./v.taucfl^2+1./v.taukls^2+2./v.taucfl/v.taukls+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[1,1] = (1/v.taucfl^2+1/v.taukls^2+2/v.taucfl/v.taukls+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
     v.Cdoe[1,2] = (-bsi/v.taukls^2-bsi/v.taucfl/v.taukls-bsi/v.taucfs/v.taukls-bsi^2/v.taukls/v.tauksl) * (p.deltat^2/12.)
-    v.Cdoe[2,1] = (-bsi/v.tauksl^2-1./v.taucfs/v.tauksl-1./v.taucfl/v.tauksl-1./v.taukls/v.tauksl) * (p.deltat^2/12.)
-    v.Cdoe[2,2] = (1./v.taucfs^2+bsi^2/v.tauksl^2+2.*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,1] = (-bsi/v.tauksl^2-1/v.taucfs/v.tauksl-1/v.taucfl/v.tauksl-1/v.taukls/v.tauksl) * (p.deltat^2/12.)
+    v.Cdoe[2,2] = (1/v.taucfs^2+bsi^2/v.tauksl^2+2*bsi/v.taucfs/v.tauksl+bsi/v.taukls/v.tauksl) * (p.deltat^2/12.)
 
     # Matrices of difference equation system B*T(i+1) = Q(i) + A*T(i)
     # T = (TL,TO)
     # (Equation A.27, EK05, or Equations 2.3.24 and 2.3.27, TK07)
-    v.Baux[1,1] = 1. + p.deltat/(2.*v.taucfl) + p.deltat/(2.*v.taukls)+v.Cdoe[1,1]
-    v.Baux[1,2] = -p.deltat/(2.*v.taukls)*bsi+v.Cdoe[1,2]
-    v.Baux[2,1] = -p.deltat/(2.*v.tauksl)+v.Cdoe[2,1]
-    v.Baux[2,2] = 1. + p.deltat/(2.*v.taucfs) + p.deltat/(2.*v.tauksl)*bsi + 2.*fso*sqrt(p.deltat/v.taudif)+v.Cdoe[2,2]
+    v.Baux[1,1] = 1. + p.deltat/(2*v.taucfl) + p.deltat/(2*v.taukls)+v.Cdoe[1,1]
+    v.Baux[1,2] = -p.deltat/(2*v.taukls)*bsi+v.Cdoe[1,2]
+    v.Baux[2,1] = -p.deltat/(2*v.tauksl)+v.Cdoe[2,1]
+    v.Baux[2,2] = 1. + p.deltat/(2*v.taucfs) + p.deltat/(2*v.tauksl)*bsi + 2*fso*sqrt(p.deltat/v.taudif)+v.Cdoe[2,2]
 
     v.IB=inv(v.Baux)
 
@@ -207,7 +207,7 @@ function init(s::doeclim)
 
         # Zeroth Order
 
-        v.KT0[i] = 4*sqrt(Float64(s.nsteps+1-i)) - 2.*sqrt(Float64(s.nsteps+2-i)) - 2*sqrt(Float64(s.nsteps-i))
+        v.KT0[i] = 4*sqrt(Float64(s.nsteps+1-i)) - 2*sqrt(Float64(s.nsteps+2-i)) - 2*sqrt(Float64(s.nsteps-i))
 
         # First Order
 
@@ -217,25 +217,25 @@ function init(s::doeclim)
 
         # Second Order
 
-        v.KTA2[i] =  8.*sqrt(Float64(s.nsteps+1-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps+1-i))- 4.*sqrt(Float64(s.nsteps+2-i))*exp(-4.*v.taubot/p.deltat/(s.nsteps+2-i))- 4.*sqrt(Float64(s.nsteps-i)) * exp(-4.*v.taubot/p.deltat/(s.nsteps-i))
+        v.KTA2[i] =  8*sqrt(Float64(s.nsteps+1-i)) * exp(-4*v.taubot/p.deltat/(s.nsteps+1-i))- 4*sqrt(Float64(s.nsteps+2-i))*exp(-4*v.taubot/p.deltat/(s.nsteps+2-i))- 4*sqrt(Float64(s.nsteps-i)) * exp(-4*v.taubot/p.deltat/(s.nsteps-i))
 
-        v.KTB2[i] = -8.*sqrt(pi*v.taubot/p.deltat) * (erf(2.*sqrt(v.taubot/p.deltat/(Float64(s.nsteps-i)))) + erf(2.*sqrt(v.taubot/p.deltat/Float64(s.nsteps+2-i))) -       2.*erf(2.*sqrt(v.taubot/p.deltat/Float64(s.nsteps+1-i))) )
+        v.KTB2[i] = -8*sqrt(pi*v.taubot/p.deltat) * (erf(2*sqrt(v.taubot/p.deltat/(Float64(s.nsteps-i)))) + erf(2*sqrt(v.taubot/p.deltat/Float64(s.nsteps+2-i))) -       2*erf(2*sqrt(v.taubot/p.deltat/Float64(s.nsteps+1-i))) )
 
         # Third Order
 
-        v.KTA3[i] = -8.*sqrt(Float64(s.nsteps+1-i)) *exp(-9.*v.taubot/p.deltat/(s.nsteps+1.-i)) + 4.*sqrt(Float64(s.nsteps+2-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps+2.-i)) + 4.*sqrt(Float64(s.nsteps-i))*exp(-9.*v.taubot/p.deltat/(s.nsteps-i))
+        v.KTA3[i] = -8*sqrt(Float64(s.nsteps+1-i)) *exp(-9*v.taubot/p.deltat/(s.nsteps+1-i)) + 4*sqrt(Float64(s.nsteps+2-i))*exp(-9*v.taubot/p.deltat/(s.nsteps+2-i)) + 4*sqrt(Float64(s.nsteps-i))*exp(-9*v.taubot/p.deltat/(s.nsteps-i))
 
-        v.KTB3[i] = 12.*sqrt(pi*v.taubot/p.deltat) * (erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2.*erf(3.*sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
+        v.KTB3[i] = 12*sqrt(pi*v.taubot/p.deltat) * (erf(3*sqrt(v.taubot/p.deltat/(s.nsteps-i))) + erf(3*sqrt(v.taubot/p.deltat/(s.nsteps+2-i))) - 2*erf(3*sqrt(v.taubot/p.deltat/(s.nsteps+1-i))) )
     end
 
     for i=1:s.nsteps
         v.Ker[i] = v.KT0[i]+v.KTA1[i]+v.KTB1[i]+v.KTA2[i]+v.KTB2[i]+v.KTA3[i]+v.KTB3[i]
     end
 
-    v.Adoe[1,1] = 1 - p.deltat/(2.*v.taucfl) - p.deltat/(2.*v.taukls) + v.Cdoe[1,1]
-    v.Adoe[1,2] =  p.deltat/(2.*v.taukls)*bsi + v.Cdoe[1,2]
-    v.Adoe[2,1] =  p.deltat/(2.*v.tauksl) + v.Cdoe[2,1]
-    v.Adoe[2,2] = 1 - p.deltat/(2.*v.taucfs) - p.deltat/(2.*v.tauksl)*bsi + v.Ker[s.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
+    v.Adoe[1,1] = 1 - p.deltat/(2*v.taucfl) - p.deltat/(2*v.taukls) + v.Cdoe[1,1]
+    v.Adoe[1,2] =  p.deltat/(2*v.taukls)*bsi + v.Cdoe[1,2]
+    v.Adoe[2,1] =  p.deltat/(2*v.tauksl) + v.Cdoe[2,1]
+    v.Adoe[2,2] = 1 - p.deltat/(2*v.taucfs) - p.deltat/(2*v.tauksl)*bsi + v.Ker[s.nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
 end
 
 function run_timestep(s::doeclim, n::Int)
@@ -275,8 +275,8 @@ function run_timestep(s::doeclim, n::Int)
         DelQ0 = Q0[n] - Q0[n-1]
 
         # Assumption: linear forcing change between n and n+1
-        QC1 = (DelQL/cal*(1./v.taucfl+1./v.taukls)-bsi*DelQ0/cas/v.taukls)
-        QC2 = (DelQ0/cas*(1./v.taucfs+bsi/v.tauksl)-DelQL/cal/v.tauksl)
+        QC1 = (DelQL/cal*(1/v.taucfl+1/v.taukls)-bsi*DelQ0/cas/v.taukls)
+        QC2 = (DelQ0/cas*(1/v.taucfs+bsi/v.tauksl)-DelQL/cal/v.tauksl)
 
         QC1 = QC1 * p.deltat^2/12.
         QC2 = QC2 * p.deltat^2/12.
@@ -316,13 +316,13 @@ function run_timestep(s::doeclim, n::Int)
         for i=1:n-1
             v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[s.nsteps-n+1+i]
         end
-        v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2.*DTE2[n] - v.heatflux_interior[n])
+        v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2*DTE2[n] - v.heatflux_interior[n])
 
         v.heat_mixed[n] = v.heat_mixed[n-1] +v.heatflux_mixed[n] *(v.powtoheat*p.deltat)
 
         v.heat_interior[n] = v.heat_interior[n-1] + v.heatflux_interior[n] * (fso*v.powtoheat*p.deltat)
 
-        v.temp[n] = flnd*v.temp_landair[n] + (1.-flnd)*bsi*v.temp_sst[n]
+        v.temp[n] = flnd*v.temp_landair[n] + (1-flnd)*bsi*v.temp_sst[n]
     else
 
         # handle initial values
