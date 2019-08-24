@@ -1,5 +1,3 @@
-using Mimi
-
 @defcomp rfco2 begin
  	a₁      = Parameter()             # CO₂ forcing constant.
     b₁      = Parameter()             # CO₂ forcing constant.

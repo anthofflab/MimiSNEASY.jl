@@ -27,8 +27,6 @@
 #               computed temperature forcing.
 #------------------------------------------------------------------------------
 
-using Mimi
-
 # Define factors used in the calculation.
 const r3f = 45.0 / 120.0
 const tp1f = 35.0 / 60.0

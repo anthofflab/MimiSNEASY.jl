@@ -1,6 +1,3 @@
-module radiativeforcingcomponent
-using Mimi
-
 @defcomp radiativeforcing begin
     deltat = Parameter()
     rf_co2 = Parameter(index=[time])
@@ -14,6 +11,4 @@ using Mimi
         v.rf[t] = p.rf_co2[t]  + p.rf_other[t] + p.alpha * p.rf_aerosol[t]    
     end
     
-end
-
 end

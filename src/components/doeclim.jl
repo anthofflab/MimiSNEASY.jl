@@ -54,7 +54,6 @@
 #   heatflux_interior:  heat uptake of the interior ocean (W/m^2)
 #
 # ==============================================================================
-using Mimi
 
 const ak   = 0.31
 const bk   = 1.59
