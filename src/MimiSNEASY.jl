@@ -3,6 +3,7 @@ module MimiSNEASY
 using Mimi
 using DataFrames
 using DelimitedFiles
+using SpecialFunctions
 
 include("components/doeclim.jl")
 include("components/ccm.jl")
