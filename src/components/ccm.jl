@@ -69,76 +69,71 @@ const npp0 = 60.0             # [GtC/yr]
     Goc = Variable(index=[4])
 
     atmco20 = Parameter()
-end
 
-function init(s::ccm)
-    p = s.Parameters
-    v = s.Variables
-    v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
-    v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
-    v.tpools[1,3] = 120.0     # Detritus [GtC]
-    v.tpools[1,4] = 1500.0    # Soil carbon [GtC]
-
-    v.ocanom[1,:] = 0
-
-    v.atmco2[1] = p.atmco20         # [ppm]
-
-    v.ocanom[1,1] = 0
-    v.ocanom[1,2] = 0
-    v.ocanom[1,3] = 0
-    v.ocanom[1,4] = 0
-end
-
-function run_timestep(s::ccm, t::Int)
-    p = s.Parameters
-    v = s.Variables
-
-    Q10temp = p.Q10^(p.temp[t]/10.0)
-
-    # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
-    npp = npp0 * (1.0+p.Beta*log(v.atmco2[t]/v.atmco2[1]))
-
-    # Calculate Heterotrophic respiration rate.     (eq3, Ricciuto 2008)
-    resp3 = v.tpools[t,3] * r3f * Q10temp
-    resp4 = v.tpools[t,4] * 0.01 * Q10temp
-    resp_h = resp3+resp4
-
-    v.landflux[t] = resp_h - npp
-
-    # Set terrestrial pool sizes for next timestep
-    v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
-    v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
-    v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
-    v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
-
-    if t<s.nsteps
-        for i=1:4
-            v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
-        end
+    function init(p, v, d)
+        v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
+        v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
+        v.tpools[1,3] = 120.0     # Detritus [GtC]
+        v.tpools[1,4] = 1500.0    # Soil carbon [GtC]
+    
+        v.ocanom[1,:] = 0
+    
+        v.atmco2[1] = p.atmco20         # [ppm]
+    
+        v.ocanom[1,1] = 0
+        v.ocanom[1,2] = 0
+        v.ocanom[1,3] = 0
+        v.ocanom[1,4] = 0
     end
-
-    netemissions = p.CO2_emissions[t] + v.landflux[t] + p.oxidised_CH₄_to_CO₂[t]
-
-    # Find fracinoc using the ocean anomaly table.
-    fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
-
-    # Compute carbon anomaly in ocean mixed layer/atmosphere
-    v.Goc[1] = netemissions-(p.Eta/hs)*v.ocanom[t,1]* fracinoc+(p.Eta/h2)*v.ocanom[t,2]
-    # Compute carbon anomaly in ocean layers 2-4
-    v.Goc[2] = (p.Eta/hs)*v.ocanom[t,1]*fracinoc- ((p.Eta+n3)/h2)*v.ocanom[t,2]+(n3/h3)*v.ocanom[t,3]
-    v.Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
-    v.Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
-
-    if t<s.nsteps
-        for i=1:4
-            v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
+    
+    function run_timestep(p, v, d, t)
+        Q10temp = p.Q10^(p.temp[t]/10.0)
+    
+        # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
+        npp = npp0 * (1.0+p.Beta*log(v.atmco2[t]/v.atmco2[1]))
+    
+        # Calculate Heterotrophic respiration rate.     (eq3, Ricciuto 2008)
+        resp3 = v.tpools[t,3] * r3f * Q10temp
+        resp4 = v.tpools[t,4] * 0.01 * Q10temp
+        resp_h = resp3+resp4
+    
+        v.landflux[t] = resp_h - npp
+    
+        # Set terrestrial pool sizes for next timestep
+        v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
+        v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
+        v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
+        v.Ftp[4] = 0.01*v.tpools[t,2] + tp3f*v.tpools[t,3] - resp4
+    
+        if t<s.nsteps
+            for i=1:4
+                v.tpools[t+1,i] = v.tpools[t,i] + p.deltat*v.Ftp[i]
+            end
         end
-
-        # Compute flux into ocean
-        v.atm_oc_flux[t] = ((v.ocanom[t+1,2] + v.ocanom[t+1,3] + v.ocanom[t+1,4]) + v.ocanom[t+1,1] * fracinoc - ((v.ocanom[t,2] + v.ocanom[t,3] + v.ocanom[t,4]) + v.ocanom[t,1] * fracinoc)) / p.deltat
-
-        v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
-    end
+    
+        netemissions = p.CO2_emissions[t] + v.landflux[t] + p.oxidised_CH₄_to_CO₂[t]
+    
+        # Find fracinoc using the ocean anomaly table.
+        fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
+    
+        # Compute carbon anomaly in ocean mixed layer/atmosphere
+        v.Goc[1] = netemissions-(p.Eta/hs)*v.ocanom[t,1]* fracinoc+(p.Eta/h2)*v.ocanom[t,2]
+        # Compute carbon anomaly in ocean layers 2-4
+        v.Goc[2] = (p.Eta/hs)*v.ocanom[t,1]*fracinoc- ((p.Eta+n3)/h2)*v.ocanom[t,2]+(n3/h3)*v.ocanom[t,3]
+        v.Goc[3] = (n3/h2)*v.ocanom[t,2]-((n3+n4)/h3)*v.ocanom[t,3]+ (n4/h4)*v.ocanom[t,4]
+        v.Goc[4] = (n4/h3)*v.ocanom[t,3] - (n4/h4)* v.ocanom[t,4]
+    
+        if t<s.nsteps
+            for i=1:4
+                v.ocanom[t+1,i] = v.ocanom[t,i] + p.deltat*v.Goc[i]
+            end
+    
+            # Compute flux into ocean
+            v.atm_oc_flux[t] = ((v.ocanom[t+1,2] + v.ocanom[t+1,3] + v.ocanom[t+1,4]) + v.ocanom[t+1,1] * fracinoc - ((v.ocanom[t,2] + v.ocanom[t,3] + v.ocanom[t,4]) + v.ocanom[t,1] * fracinoc)) / p.deltat
+    
+            v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
+        end
+    end    
 end
 
 function anom_interp(anomtable, ref_temp::Float64, ref_emis::Float64)
