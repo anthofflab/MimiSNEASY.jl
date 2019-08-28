@@ -2,6 +2,8 @@ module MimiSNEASY
 
 using Mimi
 using DataFrames
+using DelimitedFiles
+using SpecialFunctions
 
 include("components/doeclim.jl")
 include("components/ccm.jl")
@@ -11,15 +13,17 @@ include("components/rfco2.jl")
 function getsneasy(;nsteps=736)
     m = Model()
 
-    setindex(m, :time, nsteps)
+    set_dimension!(m, :time, nsteps)
+    set_dimension!(m, :anom_row, 100)
+    set_dimension!(m, :anom_col, 16000)
 
     # ---------------------------------------------
     # Create components
     # ---------------------------------------------
-    addcomponent(m, rfco2component.rfco2, :rfco2)
-    addcomponent(m, radiativeforcingcomponent.radiativeforcing, :radiativeforcing)
-    addcomponent(m, doeclimcomponent.doeclim, :doeclim)
-    addcomponent(m, ccmcomponent.ccm, :ccm)
+    add_comp!(m, rfco2)
+    add_comp!(m, radiativeforcing)
+    add_comp!(m, doeclim)
+    add_comp!(m, ccm)
 
     # ---------------------------------------------
     # Read data
@@ -28,12 +32,12 @@ function getsneasy(;nsteps=736)
     f_anomtable = readdlm(joinpath(dirname(@__FILE__), "..", "data", "anomtable.txt"));
     rf_data = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "forcing_rcp85.txt"), separator = ' ', header=true);
     df = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "RCP85_EMISSIONS.csv"))
-    rename!(df, :YEARS, :year);
+    rename!(df, :YEARS => :year);
     df = join(df, rf_data, on=:year, kind=:outer)
-    df = DataFrame(year=df[:year], co2=df[:FossilCO2]+df[:OtherCO2], rf_aerosol=df[:aerosol_direct]+df[:aerosol_indirect], rf_other=df[:ghg_nonco2]+df[:volcanic]+df[:solar]+df[:other]);
-    f_co2emissions = convert(Array, df[:co2]);
-    f_rfaerosol = convert(Array, df[:rf_aerosol]);
-    f_rfother = convert(Array, df[:rf_other]);
+    df = DataFrame(year=df.year, co2=df.FossilCO2+df.OtherCO2, rf_aerosol=df.aerosol_direct+df.aerosol_indirect, rf_other=df.ghg_nonco2+df.volcanic+df.solar+df.other);
+    f_co2emissions = convert(Array, df.co2);
+    f_rfaerosol = convert(Array, df.rf_aerosol);
+    f_rfother = convert(Array, df.rf_other);
 
     # Timesteps
     deltat = 1.0
@@ -43,32 +47,35 @@ function getsneasy(;nsteps=736)
     # Set parameters
     # ---------------------------------------------
 
-    setparameter(m, :doeclim, :t2co, 2.0)
-    setparameter(m, :doeclim, :kappa, 1.1)
-    setparameter(m, :doeclim, :deltat, deltat)
+    set_param!(m, :doeclim, :t2co, 2.0)
+    set_param!(m, :doeclim, :kappa, 1.1)
+    set_param!(m, :doeclim, :deltat, deltat)
 
-    setparameter(m, :ccm, :deltat, deltat)
-    setparameter(m, :ccm, :Q10, 1.311)
-    setparameter(m, :ccm, :Beta, 0.502)
-    setparameter(m, :ccm, :Eta, 17.7)
-    setparameter(m, :ccm, :atmco20, 280.)
-    setparameter(m, :ccm, :CO2_emissions, f_co2emissions)
-    setparameter(m, :ccm, :anomtable, anomtable)
+    set_param!(m, :ccm, :deltat, deltat)
+    set_param!(m, :ccm, :Q10, 1.311)
+    set_param!(m, :ccm, :Beta, 0.502)
+    set_param!(m, :ccm, :Eta, 17.7)
+    set_param!(m, :ccm, :atmco20, 280.)
+    set_param!(m, :ccm, :CO2_emissions, f_co2emissions)
+    set_param!(m, :ccm, :anomtable, anomtable)
+    # TODO Find better values for the following two parameters
+    set_param!(m, :ccm, :oxidised_CH₄_to_CO₂, zeros(nsteps))
+    set_param!(m, :rfco2, :N₂O, fill(272.95961, nsteps))
 
-    setparameter(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
-    #setparameter(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
-    setparameter(m, :radiativeforcing, :rf_other, f_rfother)
-    setparameter(m, :radiativeforcing, :alpha, 1.)
-    setparameter(m, :radiativeforcing, :deltat, deltat)
+    set_param!(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
+    #set_param!(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
+    set_param!(m, :radiativeforcing, :rf_other, f_rfother)
+    set_param!(m, :radiativeforcing, :alpha, 1.)
+    set_param!(m, :radiativeforcing, :deltat, deltat)
 
     # ---------------------------------------------
     # Connect parameters to variables
     # ---------------------------------------------
 
-    connectparameter(m, :doeclim, :forcing, :radiativeforcing, :rf)
-    connectparameter(m, :ccm, :temp, :doeclim, :temp)
-    connectparameter(m, :rfco2, :atmco2, :ccm, :atmco2)
-    connectparameter(m, :radiativeforcing, :rf_co2, :rfco2, :rf_co2)
+    connect_param!(m, :doeclim, :forcing, :radiativeforcing, :rf)
+    connect_param!(m, :ccm, :temp, :doeclim, :temp)
+    connect_param!(m, :rfco2, :CO₂, :ccm, :atmco2)
+    connect_param!(m, :radiativeforcing, :rf_co2, :rfco2, :rf_co2)
 
     return m
 end
