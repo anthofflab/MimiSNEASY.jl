@@ -10,12 +10,15 @@ include("components/ccm.jl")
 include("components/radiativeforcing.jl")
 include("components/rfco2.jl")
 
-function getsneasy(;nsteps=736)
+function getsneasy(;start_year::Int=1765, end_year::Int=2500)
     m = Model()
 
-    set_dimension!(m, :time, nsteps)
+    set_dimension!(m, :time, start_year:end_year)
     set_dimension!(m, :anom_row, 100)
     set_dimension!(m, :anom_col, 16000)
+
+    # Set number of model time steps.
+    nsteps = length(start_year:end_year)
 
     # ---------------------------------------------
     # Create components
@@ -29,15 +32,23 @@ function getsneasy(;nsteps=736)
     # Read data
     # ---------------------------------------------
 
-    f_anomtable = readdlm(joinpath(dirname(@__FILE__), "..", "data", "anomtable.txt"));
-    rf_data = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "forcing_rcp85.txt"), separator = ' ', header=true);
+    # Read in RCP scenario and other data needed to run SNEASY.
     df = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "RCP85_EMISSIONS.csv"))
+    rf_data = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "forcing_rcp85.txt"), separator = ' ', header=true)
+    f_anomtable = readdlm(joinpath(dirname(@__FILE__), "..", "data", "anomtable.txt"));
+
+    # Get RCP year indices based on user-specified time horizon to run model.
+    start_index, end_index = findall((in)([start_year, end_year]), collect(1765:2500))
+
+    # Clean up model data.
     rename!(df, :YEARS => :year);
     df = join(df, rf_data, on=:year, kind=:outer)
     df = DataFrame(year=df.year, co2=df.FossilCO2+df.OtherCO2, rf_aerosol=df.aerosol_direct+df.aerosol_indirect, rf_other=df.ghg_nonco2+df.volcanic+df.solar+df.other);
-    f_co2emissions = convert(Array, df.co2);
-    f_rfaerosol = convert(Array, df.rf_aerosol);
-    f_rfother = convert(Array, df.rf_other);
+
+    # Get specific input variables indexed to user-specified model time horizon.
+    f_co2emissions = convert(Array, df.co2)[start_index:end_index]
+    f_rfaerosol = convert(Array, df.rf_aerosol)[start_index:end_index]
+    f_rfother = convert(Array, df.rf_other)[start_index:end_index]
 
     # Timesteps
     deltat = 1.0
