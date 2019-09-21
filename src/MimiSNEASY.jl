@@ -69,8 +69,7 @@ function getsneasy(;start_year::Int=1765, end_year::Int=2500)
     set_param!(m, :ccm, :atmco20, 280.)
     set_param!(m, :ccm, :CO2_emissions, f_co2emissions)
     set_param!(m, :ccm, :anomtable, anomtable)
-    # TODO Find better values for the following two parameters
-    set_param!(m, :ccm, :oxidised_CH₄_to_CO₂, zeros(nsteps))
+    # TODO Find better values for the following parameter
     set_param!(m, :rfco2, :N₂O, fill(272.95961, nsteps))
 
     set_param!(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
