@@ -53,7 +53,6 @@ const npp0 = 60.0             # [GtC/yr]
     Eta = Parameter() #default 16.88,   diffusion coeffs [m/yr]
     temp = Parameter(index=[time])
     CO2_emissions = Parameter(index=[time])
-    oxidised_CH₄_to_CO₂          =Parameter(index=[time]) #CO2 emissions form CH4 oxidation
 
     # Set anomtable to be a parameter, indexed by anom_row and anom_col
     anomtable = Parameter(index =[anom_row, anom_col])
@@ -109,7 +108,7 @@ const npp0 = 60.0             # [GtC/yr]
             end
         end
     
-        netemissions = p.CO2_emissions[t] + v.landflux[t] + p.oxidised_CH₄_to_CO₂[t]
+        netemissions = p.CO2_emissions[t] + v.landflux[t]
     
         # Find fracinoc using the ocean anomaly table.
         fracinoc = anom_interp(p.anomtable, p.temp[t], v.ocanom[t,1]+netemissions)
