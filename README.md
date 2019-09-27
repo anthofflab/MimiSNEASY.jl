@@ -1,4 +1,6 @@
-# Sneasy.jl
+# MimiSNEASY.jl
+
+![](https://github.com/anthofflab/MimiSNEASY.jl/workflows/Run%20tests/badge.svg)
 
 This is an implementation of SNEASY in Julia. Everything is experimental at this point and this is not the official SNEASY code.
 
