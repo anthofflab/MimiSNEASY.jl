@@ -7,7 +7,7 @@ function doruns(model)
     end
 end
 
-m = getsneasy()
+m = get_model()
 run(m)
 
 @time doruns(m)

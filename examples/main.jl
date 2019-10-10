@@ -1,5 +1,5 @@
 include("sneasy.jl")
 
-m = getsneasy()
+m = get_model()
 
 run(m)

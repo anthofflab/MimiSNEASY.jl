@@ -1,7 +1,7 @@
 include("../src/sneasy.jl")
 
 function construct_run_mimi_sneasy()
-    m = getsneasy(nsteps=246)
+    m = get_model(nsteps=246)
 
     function run_mimi_sneasy!(
 	       MOC_strength::Vector{Float64},

@@ -10,7 +10,7 @@ include("components/ccm.jl")
 include("components/radiativeforcing.jl")
 include("components/rfco2.jl")
 
-function getsneasy(;start_year::Int=1765, end_year::Int=2500)
+function get_model(;start_year::Int=1765, end_year::Int=2500)
     m = Model()
 
     set_dimension!(m, :time, start_year:end_year)
