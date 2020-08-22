@@ -4,6 +4,8 @@ using Mimi
 using DataFrames
 using DelimitedFiles
 using SpecialFunctions
+using CSVFiles
+using Query
 
 include("components/doeclim.jl")
 include("components/ccm.jl")
@@ -33,16 +35,18 @@ function getsneasy(;start_year::Int=1765, end_year::Int=2500)
     # ---------------------------------------------
 
     # Read in RCP scenario and other data needed to run SNEASY.
-    df = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "RCP85_EMISSIONS.csv"))
-    rf_data = readtable(joinpath(dirname(@__FILE__), "..", "calibration", "data", "forcing_rcp85.txt"), separator = ' ', header=true)
-    f_anomtable = readdlm(joinpath(dirname(@__FILE__), "..", "data", "anomtable.txt"));
+    df = load(joinpath(@__DIR__, "..", "calibration", "data", "RCP85_EMISSIONS.csv")) |> DataFrame
+    rf_data = load(File(format"CSV", joinpath(@__DIR__, "..", "calibration", "data", "forcing_rcp85.txt")), spacedelim=true) |> 
+        @rename(3=>:ghg_nonco2, 4=>:aerosol_direct, 5=>:aerosol_indirect) |>
+        DataFrame
+    f_anomtable = readdlm(joinpath(@__DIR__, "..", "data", "anomtable.txt"));
 
     # Get RCP year indices based on user-specified time horizon to run model.
     start_index, end_index = findall((in)([start_year, end_year]), collect(1765:2500))
 
     # Clean up model data.
     rename!(df, :YEARS => :year);
-    df = join(df, rf_data, on=:year, kind=:outer)
+    df = outerjoin(df, rf_data, on=:year)
     df = DataFrame(year=df.year, co2=df.FossilCO2+df.OtherCO2, rf_aerosol=df.aerosol_direct+df.aerosol_indirect, rf_other=df.ghg_nonco2+df.volcanic+df.solar+df.other);
 
     # Get specific input variables indexed to user-specified model time horizon.
