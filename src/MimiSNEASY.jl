@@ -64,9 +64,7 @@ function getsneasy(;start_year::Int=1765, end_year::Int=2500)
 
     set_param!(m, :doeclim, :t2co, 2.0)
     set_param!(m, :doeclim, :kappa, 1.1)
-    set_param!(m, :doeclim, :deltat, deltat)
 
-    set_param!(m, :ccm, :deltat, deltat)
     set_param!(m, :ccm, :Q10, 1.311)
     set_param!(m, :ccm, :Beta, 0.502)
     set_param!(m, :ccm, :Eta, 17.7)
@@ -80,7 +78,8 @@ function getsneasy(;start_year::Int=1765, end_year::Int=2500)
     #set_param!(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
     set_param!(m, :radiativeforcing, :rf_other, f_rfother)
     set_param!(m, :radiativeforcing, :alpha, 1.)
-    set_param!(m, :radiativeforcing, :deltat, deltat)
+
+    set_param!(m, :deltat, deltat)
 
     # ---------------------------------------------
     # Connect parameters to variables
