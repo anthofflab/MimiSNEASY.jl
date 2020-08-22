@@ -68,26 +68,25 @@ const npp0 = 60.0             # [GtC/yr]
     atmco20 = Parameter()
 
     function init(p, v, d)
-        v.tpools[1,1] = 100.0     # Non-woody vegetation [GtC]
-        v.tpools[1,2] = 500.0     # Woody vegetation [GtC]
-        v.tpools[1,3] = 120.0     # Detritus [GtC]
-        v.tpools[1,4] = 1500.0    # Soil carbon [GtC]
+        v.tpools[TimestepIndex(1),1] = 100.0     # Non-woody vegetation [GtC]
+        v.tpools[TimestepIndex(1),2] = 500.0     # Woody vegetation [GtC]
+        v.tpools[TimestepIndex(1),3] = 120.0     # Detritus [GtC]
+        v.tpools[TimestepIndex(1),4] = 1500.0    # Soil carbon [GtC]
     
-        v.ocanom[1,:] = 0
     
-        v.atmco2[1] = p.atmco20         # [ppm]
+        v.atmco2[TimestepIndex(1)] = p.atmco20         # [ppm]
     
-        v.ocanom[1,1] = 0
-        v.ocanom[1,2] = 0
-        v.ocanom[1,3] = 0
-        v.ocanom[1,4] = 0
+        v.ocanom[TimestepIndex(1),1] = 0
+        v.ocanom[TimestepIndex(1),2] = 0
+        v.ocanom[TimestepIndex(1),3] = 0
+        v.ocanom[TimestepIndex(1),4] = 0
     end
     
     function run_timestep(p, v, d, t)
         Q10temp = p.Q10^(p.temp[t]/10.0)
     
         # Calculate Net Primary Productivity.   (eq2, Ricciuto 2008)
-        npp = npp0 * (1.0+p.Beta*log(v.atmco2[t]/v.atmco2[1]))
+        npp = npp0 * (1.0+p.Beta*log(v.atmco2[t]/v.atmco2[TimestepIndex(1)]))
     
         # Calculate Heterotrophic respiration rate.     (eq3, Ricciuto 2008)
         resp3 = v.tpools[t,3] * r3f * Q10temp
@@ -97,6 +96,7 @@ const npp0 = 60.0             # [GtC/yr]
         v.landflux[t] = resp_h - npp
     
         # Set terrestrial pool sizes for next timestep
+        # TODO Why doesn't Ftp have a time index here?
         v.Ftp[1] = npp*tp1f - 0.35*v.tpools[t,1]
         v.Ftp[2] = npp*tp2f - 0.05*v.tpools[t,2]
         v.Ftp[3] = 0.35*v.tpools[t,1] + 0.04*v.tpools[t,2] - tp3f*v.tpools[t,3] - resp3
@@ -128,7 +128,7 @@ const npp0 = 60.0             # [GtC/yr]
             # Compute flux into ocean
             v.atm_oc_flux[t] = ((v.ocanom[t+1,2] + v.ocanom[t+1,3] + v.ocanom[t+1,4]) + v.ocanom[t+1,1] * fracinoc - ((v.ocanom[t,2] + v.ocanom[t,3] + v.ocanom[t,4]) + v.ocanom[t,1] * fracinoc)) / p.deltat
     
-            v.atmco2[t+1] = v.atmco2[1]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
+            v.atmco2[t+1] = v.atmco2[TimestepIndex(1)]+(v.ocanom[t+1,1]*(1-fracinoc))/2.13
         end
     end    
 end
