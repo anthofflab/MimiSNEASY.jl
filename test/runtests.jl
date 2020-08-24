@@ -8,7 +8,7 @@ using Test
 # include("test_doeclim.jl")
 # include("test_sneasy.jl")
 
-m = MimiSNEASY.getsneasy()
+m = MimiSNEASY.get_model()
 run(m)
 
 end

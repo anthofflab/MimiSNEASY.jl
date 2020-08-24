@@ -1,5 +1,6 @@
-include("sneasy.jl")
+using MimiSNEASY
+using Mimi
 
-m = getsneasy()
+m = MimiSNEASY.get_model()
 
 run(m)
