@@ -205,35 +205,35 @@ const secs_per_Year = 31556926.0
     
             # Zeroth Order
     
-            v.KT0[i] = 4*sqrt(Float64(nsteps+1-i)) - 2*sqrt(Float64(nsteps+2-i)) - 2*sqrt(Float64(nsteps-i))
+            v.KT0[TimestepIndex(i)] = 4*sqrt(Float64(nsteps+1-i)) - 2*sqrt(Float64(nsteps+2-i)) - 2*sqrt(Float64(nsteps-i))
     
             # First Order
     
-            v.KTA1[i] = -8*sqrt(Float64(nsteps+1-i)) * exp(-v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i)) *exp(-v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i)) *exp(-v.taubot/p.deltat/(nsteps-i))
+            v.KTA1[TimestepIndex(i)] = -8*sqrt(Float64(nsteps+1-i)) * exp(-v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i)) *exp(-v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i)) *exp(-v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB1[i] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
+            v.KTB1[TimestepIndex(i)] = 4*sqrt(pi*v.taubot/p.deltat) * (erf(sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
     
             # Second Order
     
-            v.KTA2[i] =  8*sqrt(Float64(nsteps+1-i)) * exp(-4*v.taubot/p.deltat/(nsteps+1-i))- 4*sqrt(Float64(nsteps+2-i))*exp(-4*v.taubot/p.deltat/(nsteps+2-i))- 4*sqrt(Float64(nsteps-i)) * exp(-4*v.taubot/p.deltat/(nsteps-i))
+            v.KTA2[TimestepIndex(i)] =  8*sqrt(Float64(nsteps+1-i)) * exp(-4*v.taubot/p.deltat/(nsteps+1-i))- 4*sqrt(Float64(nsteps+2-i))*exp(-4*v.taubot/p.deltat/(nsteps+2-i))- 4*sqrt(Float64(nsteps-i)) * exp(-4*v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB2[i] = -8*sqrt(pi*v.taubot/p.deltat) * (erf(2*sqrt(v.taubot/p.deltat/(Float64(nsteps-i)))) + erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+2-i))) -       2*erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+1-i))) )
+            v.KTB2[TimestepIndex(i)] = -8*sqrt(pi*v.taubot/p.deltat) * (erf(2*sqrt(v.taubot/p.deltat/(Float64(nsteps-i)))) + erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+2-i))) -       2*erf(2*sqrt(v.taubot/p.deltat/Float64(nsteps+1-i))) )
     
             # Third Order
     
-            v.KTA3[i] = -8*sqrt(Float64(nsteps+1-i)) *exp(-9*v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i))*exp(-9*v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i))*exp(-9*v.taubot/p.deltat/(nsteps-i))
+            v.KTA3[TimestepIndex(i)] = -8*sqrt(Float64(nsteps+1-i)) *exp(-9*v.taubot/p.deltat/(nsteps+1-i)) + 4*sqrt(Float64(nsteps+2-i))*exp(-9*v.taubot/p.deltat/(nsteps+2-i)) + 4*sqrt(Float64(nsteps-i))*exp(-9*v.taubot/p.deltat/(nsteps-i))
     
-            v.KTB3[i] = 12*sqrt(pi*v.taubot/p.deltat) * (erf(3*sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(3*sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(3*sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
+            v.KTB3[TimestepIndex(i)] = 12*sqrt(pi*v.taubot/p.deltat) * (erf(3*sqrt(v.taubot/p.deltat/(nsteps-i))) + erf(3*sqrt(v.taubot/p.deltat/(nsteps+2-i))) - 2*erf(3*sqrt(v.taubot/p.deltat/(nsteps+1-i))) )
         end
     
         for i=1:nsteps
-            v.Ker[i] = v.KT0[i]+v.KTA1[i]+v.KTB1[i]+v.KTA2[i]+v.KTB2[i]+v.KTA3[i]+v.KTB3[i]
+            v.Ker[TimestepIndex(i)] = v.KT0[TimestepIndex(i)]+v.KTA1[TimestepIndex(i)]+v.KTB1[TimestepIndex(i)]+v.KTA2[TimestepIndex(i)]+v.KTB2[TimestepIndex(i)]+v.KTA3[TimestepIndex(i)]+v.KTB3[TimestepIndex(i)]
         end
 
         v.Adoe[1,1] = 1 - p.deltat/(2*v.taucfl) - p.deltat/(2*v.taukls) + v.Cdoe[1,1]
         v.Adoe[1,2] =  p.deltat/(2*v.taukls)*bsi + v.Cdoe[1,2]
         v.Adoe[2,1] =  p.deltat/(2*v.tauksl) + v.Cdoe[2,1]
-        v.Adoe[2,2] = 1 - p.deltat/(2*v.taucfs) - p.deltat/(2*v.tauksl)*bsi + v.Ker[nsteps]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
+        v.Adoe[2,2] = 1 - p.deltat/(2*v.taucfs) - p.deltat/(2*v.tauksl)*bsi + v.Ker[TimestepIndex(nsteps)]*fso*sqrt(p.deltat/v.taudif) + v.Cdoe[2,2]
     end
     
     function run_timestep(p, v, d, n)
@@ -295,7 +295,7 @@ const secs_per_Year = 31556926.0
 
             # TODO convert this to proper timestep handling
             for i=1:n.t-1
-                DPAST2 = DPAST2+DTE2[i]*v.Ker[nsteps-n.t+i]
+                DPAST2 = DPAST2+DTE2[TimestepIndex(i)]*v.Ker[TimestepIndex(nsteps-n.t+i)]
             end
     
             DPAST2 = DPAST2*fso * sqrt(p.deltat/v.taudif)
@@ -315,7 +315,7 @@ const secs_per_Year = 31556926.0
     
             v.heatflux_interior[n] = 0.
             for i=1:n.t-1
-                v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[i]*v.Ker[nsteps-n.t+1+i]
+                v.heatflux_interior[n] = v.heatflux_interior[n]+DTE2[TimestepIndex(i)]*v.Ker[TimestepIndex(nsteps-n.t+1+i)]
             end
             v.heatflux_interior[n] = cas*fso/sqrt(v.taudif*p.deltat)*(2*DTE2[n] - v.heatflux_interior[n])
     
@@ -339,15 +339,15 @@ const secs_per_Year = 31556926.0
             DPAST2 = 0.0
             DPAST1 = 0.0
     
-            v.temp_landair[1] = 0.0
-            v.temp_sst[1] = 0.0
+            v.temp_landair[TimestepIndex(1)] = 0.0
+            v.temp_sst[TimestepIndex(1)] = 0.0
     
-            v.heatflux_mixed[1] = 0.0
-            v.heatflux_interior[1] = 0.0
+            v.heatflux_mixed[TimestepIndex(1)] = 0.0
+            v.heatflux_interior[TimestepIndex(1)] = 0.0
     
-            v.heat_mixed[1] = 0.0
-            v.heat_interior[1] = 0.0
-            v.temp[1] = 0.0
+            v.heat_mixed[TimestepIndex(1)] = 0.0
+            v.heat_interior[TimestepIndex(1)] = 0.0
+            v.temp[TimestepIndex(1)] = 0.0
         end
     end
     
