@@ -1,5 +1,5 @@
 using Mimi
-include("sneasy.jl")
+using MimiSNEASY
 
 function doruns(model)
     for i=1:30000
@@ -7,7 +7,7 @@ function doruns(model)
     end
 end
 
-m = getsneasy()
+m = MimiSNEASY.get_model()
 run(m)
 
 @time doruns(m)
