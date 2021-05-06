@@ -25,7 +25,7 @@ function construct_run_mimi_sneasy()
 
         n = length(co2_emissions)
 
-        if length(rf_aerosol)!=n || length(rf_nonco2)!=n
+        if length(rf_aerosol) != n || length(rf_nonco2) != n
             error("All input vectors must have the same length")
         end
 

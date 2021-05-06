@@ -14,9 +14,9 @@ include("assim.jl")
 run_mimi_sneasy! = construct_run_mimi_sneasy()
 
 # Get log-likelihood function
-if sneasy_version==:fortran
+if sneasy_version == :fortran
     log_post = construct_log_post(run_fortran_sneasy!)
-elseif sneasy_version==:julia
+elseif sneasy_version == :julia
     log_post = construct_log_post(run_mimi_sneasy!)
 else
     error("Unknown sneasy version requested")
@@ -37,37 +37,37 @@ else
 	opt = Opt(:LN_NELDERMEAD, 18)
 	lower_bounds!(opt, Float64[0,0,0,0,0,0,0,-Inf,-100,280,10,0,0,0,0,0,0,0])
 	upper_bounds!(opt, Float64[Inf,Inf,3,5,1,200,0.06,Inf,0,295,30,0.2,4,1,10,0.99,0.99,0.99])
-	max_objective!(opt, (x, grad)->log_post(x))
+	max_objective!(opt, (x, grad) -> log_post(x))
 	maxtime!(opt, 180)
 
-	(minf,minx,ret) = optimize(opt, initial_guess)
+	(minf, minx, ret) = optimize(opt, initial_guess)
 	p0 = minx
 end
 
 model = likelihood_model(BasicContMuvParameter(:p, logtarget=log_post), false)
 
-step = [1.6,1.7,0.25,0.75,0.15,40,0.015,0.03,9,0.7,1.3,0.005,0.25,0.045,0.57,0.07,0.06,0.11]./10
+step = [1.6,1.7,0.25,0.75,0.15,40,0.015,0.03,9,0.7,1.3,0.005,0.25,0.045,0.57,0.07,0.06,0.11] ./ 10
 
 if multiple_chains
-    job1 = BasicMCJob(model, MH(step), BasicMCRange(nsteps=10000, burnin=0), Dict(:p=>p0))
+    job1 = BasicMCJob(model, MH(step), BasicMCRange(nsteps=10000, burnin=0), Dict(:p => p0))
     @time mcchain1 = run(job1)
 
-    job2 = BasicMCJob(model, MH(proposal_matrix(output(job1),mult=0.5)), BasicMCRange(nsteps=100_000, burnin=0), Dict(:p=>p0))
+    job2 = BasicMCJob(model, MH(proposal_matrix(output(job1), mult=0.5)), BasicMCRange(nsteps=100_000, burnin=0), Dict(:p => p0))
     @time mcchain2 = run(job2)
 
-    job3 = BasicMCJob(model, MH(proposal_matrix(output(job2),mult=0.5)), BasicMCRange(nsteps=1_000_000, burnin=0), Dict(:p=>p0))
+    job3 = BasicMCJob(model, MH(proposal_matrix(output(job2), mult=0.5)), BasicMCRange(nsteps=1_000_000, burnin=0), Dict(:p => p0))
     @time mcchain3 = run(job3)
 
     job = job3
 else
-    job = BasicMCJob(model, MH(step), BasicMCRange(nsteps=100_000, burnin=1_000), Dict(:p=>p0))
+    job = BasicMCJob(model, MH(step), BasicMCRange(nsteps=100_000, burnin=1_000), Dict(:p => p0))
     @time mcchain1 = run(job)
 end
 
-for (i,name) in enumerate(parnames)
-    draw(PDF("plot-$name.pdf", 12cm,12cm), plot(x=vec(output(job).value[i,:]), Geom.density, Guide.title(name)))
+for (i, name) in enumerate(parnames)
+    draw(PDF("plot-$name.pdf", 12cm, 12cm), plot(x=vec(output(job).value[i,:]), Geom.density, Guide.title(name)))
 end
 
-#cleanup_sneasy() # deallocates memory after SNEASY is done
+# cleanup_sneasy() # deallocates memory after SNEASY is done
 
-#println("Acceptance: $(acceptance(mcchain3))") # acceptance rates around 0.25 (+/- 0.05) are good
+# println("Acceptance: $(acceptance(mcchain3))") # acceptance rates around 0.25 (+/- 0.05) are good

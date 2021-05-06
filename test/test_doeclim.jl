@@ -6,7 +6,7 @@ include("../../sneasy/julia/sneasy.jl")
 include("../src/doeclim.jl")
 
 df = readtable("../../sneasy/data/forcing_rcp85.txt", separator=' ');
-df = DataFrame(year=df[:year], rf=df[:co2]+df[:aerosol_direct]+df[:aerosol_indirect]+df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other]);
+df = DataFrame(year=df[:year], rf=df[:co2] + df[:aerosol_direct] + df[:aerosol_indirect] + df[:ghg_nonco2] + df[:solar] + df[:volcanic] + df[:other]);
 total_forcing = convert(Array, df[:rf]);
 
 deltat = 1.0
@@ -31,7 +31,7 @@ end
 
 
 
-#Note on Parameter/Variable Values
+# Note on Parameter/Variable Values
 #	t2co				=	climate sensitivity to 2xCO2 (K)
 #	kappa				=	vertical ocean diffusivity (cm^2 s^-1)
 #	deltat				=	timestep
@@ -42,14 +42,14 @@ end
 #
 #	format for run_fortran_doeclim = run_fortran_doeclim(t2co, Kappa, radiative_forcing)
 
-#Run Mimi Verseion of doeclim
+# Run Mimi Verseion of doeclim
 m_temp, m_heatflux_mixed, m_heatflux_interior = mimidoeclim(2.0, 1.1, total_forcing);
 
-#Run fortran version of doeclim
+# Run fortran version of doeclim
 f_temp, f_heatflux_mixed, f_heatflux_interior = run_fortran_doeclim(2.0, 1.1, total_forcing);
 
 
-#Test Precision
+# Test Precision
 Precision = 1.0e-6
 
 @test_approx_eq_eps maxabs(m_temp .- f_temp) 0. Precision
