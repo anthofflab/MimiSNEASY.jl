@@ -9,12 +9,12 @@ include("../src/ccm.jl")
 df = readtable("../../sneasy/data/RCP85_EMISSIONS.csv");
 co2_forcing = convert(Array, (df[:FossilCO2] + df[:OtherCO2]));
 
-#Load Ocean anomaly table (need to use transpose)
+# Load Ocean anomaly table (need to use transpose)
 anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
 
-#Create a temperature forcing file with the appropriate length
+# Create a temperature forcing file with the appropriate length
 srand(123);
-temp_forcing = Float64[0.8 * (1+0.0025)^t + rand(Normal(0., 0.2), 1)[1] for t = 1:length(co2_forcing)];
+temp_forcing = Float64[0.8 * (1 + 0.0025)^t + rand(Normal(0., 0.2), 1)[1] for t = 1:length(co2_forcing)];
 
 deltat = 1.0
 
@@ -42,7 +42,7 @@ end
 
 
 
-#Note on Parameter/Variable Values
+# Note on Parameter/Variable Values
 #	deltat			=	timestep
 #	Q10				=	Respiration Temperature sens.
 #	Beta			=	Carbon Fertilization param.
@@ -54,16 +54,16 @@ end
 #	format for run_fortran_ccm = run_fortran_ccm(Climate_sensitivity, Soil_respiration, Carbon_fertilization, Thermocline_diffusion, Initial_CO2, Temp_Forcing, CO2_emissions_forcing)
 #	Note: Climate Sensitivity parameter for run_fortran_ccm does not affect results (and is not included in mimi version)
 
-#Run Mimi Verseion of ccm
+# Run Mimi Verseion of ccm
 m_atmco2 = mimiccm(1., 1.311, 0.502, 280., temp_forcing, co2_forcing);
 
-#Run fortran version of ccm
+# Run fortran version of ccm
 init_fortran_ccm()
 f_atmco2 = run_fortran_ccm(2., 1., 1.311, 0.502, 280., temp_forcing, co2_forcing);
 fin_fortran_ccm()
 
 
-#Test Precision
+# Test Precision
 Precision = 1.0e-12
 
 @test_approx_eq_eps maxabs(m_atmco2 .- f_atmco2) 0. Precision

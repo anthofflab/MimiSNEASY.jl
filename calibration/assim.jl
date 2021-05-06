@@ -8,14 +8,14 @@ include("run_mimi_sneasy.jl")
 
 function sneasy_load_data()
 	# load emissions data time series.
-	df_emissions = readtable(joinpath(dirname(@__FILE__),"data/RCP85_EMISSIONS.csv"))
+	df_emissions = readtable(joinpath(dirname(@__FILE__), "data/RCP85_EMISSIONS.csv"))
 	rename!(df_emissions, :YEARS, :year)
 
-	df_forcings = readtable(joinpath(dirname(@__FILE__),"data/forcing_rcp85.txt"), separator=' ')
+	df_forcings = readtable(joinpath(dirname(@__FILE__), "data/forcing_rcp85.txt"), separator=' ')
 
 	df = join(df_emissions, df_forcings, on=:year)
 
-	df = DataFrame(year=df[:year], co2=df[:FossilCO2]+df[:OtherCO2], rf_aerosols=df[:aerosol_direct]+df[:aerosol_indirect], rf_other=df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other])
+	df = DataFrame(year=df[:year], co2=df[:FossilCO2] + df[:OtherCO2], rf_aerosols=df[:aerosol_direct] + df[:aerosol_indirect], rf_other=df[:ghg_nonco2] + df[:solar] + df[:volcanic] + df[:other])
 
 	return df
 end
@@ -23,12 +23,12 @@ end
 # log likelihood for a zero-mean AR1 process (innovation variance sigma^2, lag-1 autocorrelation coefficient rho1); handles initial value assuming process stationarity
 function loglar1(r, σ, ρ1)
 	n = length(r)
-	σ_proc = σ/sqrt(1-ρ1^2) # stationary process variance sigma.proc^2
+	σ_proc = σ / sqrt(1 - ρ1^2) # stationary process variance sigma.proc^2
 
   	logl = logpdf(Normal(0, σ_proc), r[1])
 
-  	for i=2:length(r)
-		w = r[i] - ρ1 * r[i-1] # whitened residuals
+  	for i = 2:length(r)
+		w = r[i] - ρ1 * r[i - 1] # whitened residuals
 		logl = logl + logpdf(Normal(0, σ), w)
 	end
   	return logl
@@ -82,7 +82,7 @@ function log_pri(p)
 	# the pdf of the NormalInverseGaussian without any truncation. Technically
 	# that is not the correct pdf, but for the MCMC algorithm that doesn't matter.
 	lpri = -Inf
-	if S>0.
+	if S > 0.
         lpri = logpdf(prior_S1, S) + logpdf(prior_S2, S) + logpdf(prior_κ, κ) + logpdf(prior_α, α) + logpdf(prior_Q10, Q10) + logpdf(prior_beta, beta) + logpdf(prior_eta, eta) + logpdf(prior_hydsens, hydsens) + logpdf(prior_T0, T0) + logpdf(prior_H0, H0) + logpdf(prior_CO20, CO20) + logpdf(prior_MOC0, MOC0) + logpdf(prior_σ_temp, σ_temp) + logpdf(prior_σ_ocheat, σ_ocheat) + logpdf(prior_σ_co2inst, σ_co2inst) + logpdf(prior_σ_co2ice, σ_co2ice) + logpdf(prior_ρ_temp, ρ_temp) + logpdf(prior_ρ_ocheat, ρ_ocheat) + logpdf(prior_ρ_co2inst, ρ_co2inst)
 	end
 
@@ -110,8 +110,8 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 	f_other = convert(Array, df[:rf_other])
 
 	obs_temperature = df[:obs_temperature]
-  	obs_temperature_indiceswithdata = Array(Int,0)
-	for i=1:length(obs_temperature)
+  	obs_temperature_indiceswithdata = Array(Int, 0)
+	for i = 1:length(obs_temperature)
 		if !isna(obs_temperature[i])
 			push!(obs_temperature_indiceswithdata, i)
 		end
@@ -119,8 +119,8 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
   	tempvar_temperature_res = zeros(length(obs_temperature_indiceswithdata))
 
 	obs_ocheat = df[:obs_ocheat]
-  	obs_ocheat_indiceswithdata = Array(Int,0)
-	for i=1:length(obs_ocheat)
+  	obs_ocheat_indiceswithdata = Array(Int, 0)
+	for i = 1:length(obs_ocheat)
 		if !isna(obs_ocheat[i])
 			push!(obs_ocheat_indiceswithdata, i)
 		end
@@ -128,8 +128,8 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
   	tempvar_ocheat_res = zeros(length(obs_ocheat_indiceswithdata))
 
 	obs_co2inst = df[:obs_co2inst]
-  	obs_co2inst_indiceswithdata = Array(Int,0)
-	for i=1:length(obs_co2inst)
+  	obs_co2inst_indiceswithdata = Array(Int, 0)
+	for i = 1:length(obs_co2inst)
 		if !isna(obs_co2inst[i])
 			push!(obs_co2inst_indiceswithdata, i)
 		end
@@ -137,8 +137,8 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
   	tempvar_co2inst_res = zeros(length(obs_co2inst_indiceswithdata))
 
     obs_co2ice = df[:obs_co2ice]
-    obs_co2ice_indiceswithdata = Array(Int,0)
-    for i=1:length(obs_co2ice)
+    obs_co2ice_indiceswithdata = Array(Int, 0)
+    for i = 1:length(obs_co2ice)
         if !isna(obs_co2ice[i])
             push!(obs_co2ice_indiceswithdata, i)
         end
@@ -147,8 +147,8 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
     obs_ocflux = df[:obs_ocflux]
     obs_ocflux_err = df[:obs_ocflux_err]
-    obs_ocflux_indiceswithdata = Array(Int,0)
-    for i=1:length(obs_ocflux)
+    obs_ocflux_indiceswithdata = Array(Int, 0)
+    for i = 1:length(obs_ocflux)
         if !isna(obs_ocflux[i])
             push!(obs_ocflux_indiceswithdata, i)
         end
@@ -193,7 +193,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
 		llik_temp = 0.
 		if assim_temp
-			for (i, index)=enumerate(obs_temperature_indiceswithdata)
+			for (i, index) = enumerate(obs_temperature_indiceswithdata)
 				tempvar_temperature_res[i] = obs_temperature[index] - (model_temperature[index] + T0)
 			end
 			llik_temp = loglar1(tempvar_temperature_res, σ_temp, ρ_temp)
@@ -201,7 +201,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
 		llik_ocheat = 0.
 		if assim_ocheat
-			for (i, index)=enumerate(obs_ocheat_indiceswithdata)
+			for (i, index) = enumerate(obs_ocheat_indiceswithdata)
 				tempvar_ocheat_res[i] = obs_ocheat[index] - (model_ocheat[index] + H0)
 			end
 			llik_ocheat = loglar1(tempvar_ocheat_res, σ_ocheat, ρ_ocheat)
@@ -209,7 +209,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
 		llik_co2inst = 0.
 		if assim_co2inst
-			for (i, index)=enumerate(obs_co2inst_indiceswithdata)
+			for (i, index) = enumerate(obs_co2inst_indiceswithdata)
 				tempvar_co2inst_res[i] = obs_co2inst[index] - model_co2[index]
 			end
 			llik_co2inst = loglar1(tempvar_co2inst_res, σ_co2inst, ρ_co2inst)
@@ -217,7 +217,7 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
         llik_co2ice = 0.
         if assim_co2ice
-            for (i, index)=enumerate(obs_co2ice_indiceswithdata)
+            for (i, index) = enumerate(obs_co2ice_indiceswithdata)
                 mean_co2ice[i] = mean(model_co2[index + (-4:3)])
                 llik_co2ice = llik_co2ice + logpdf(Normal(mean_co2ice[i], σ_co2ice), obs_co2ice[index])
             end
@@ -225,16 +225,16 @@ function construct_log_post(f_run_model, endyear=2010; assim_temp=true, assim_oc
 
         llik_ocflux = 0.
         if assim_ocflux
-            for (i,index) = enumerate(obs_ocflux_indiceswithdata)
+            for (i, index) = enumerate(obs_ocflux_indiceswithdata)
                 llik_ocflux =  llik_ocflux + logpdf(Normal(atm_oc_flux[index], obs_ocflux_err[index]), obs_ocflux[index])
             end
         end
 
-		#llik.moc = 0
-		#if(assim.moc & !is.null(oidx.moc))
+		# llik.moc = 0
+		# if(assim.moc & !is.null(oidx.moc))
 		#	llik.moc = sum(dnorm(obs.moc[oidx.moc], model.out$moc[midx.moc], obs.moc.err[oidx.moc], log=TRUE))
 
-		#llik = llik.temp + llik.ocheat + llik.co2inst + llik.co2inst + llik.co2ice + llik.ocflux + llik.moc # assume the residual time series are independent
+		# llik = llik.temp + llik.ocheat + llik.co2inst + llik.co2inst + llik.co2ice + llik.ocflux + llik.moc # assume the residual time series are independent
 
 		llik = llik_temp + llik_ocheat + llik_co2inst + llik_co2ice + llik_ocflux
 
@@ -271,8 +271,8 @@ function proposal_matrix(chain; mult=1., beta=0.05)
 	p = size(prechain, 2)
 	precov = cov(prechain)
 
-	propcov = (1-beta)*2.38^2*precov/p + beta*0.1^2*eye(p)/p
-	propcov = mult*propcov
+	propcov = (1 - beta) * 2.38^2 * precov / p + beta * 0.1^2 * eye(p) / p
+	propcov = mult * propcov
 
 	mat = chol(propcov)'
 

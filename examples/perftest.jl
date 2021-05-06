@@ -2,7 +2,7 @@ using Mimi
 using MimiSNEASY
 
 function doruns(model)
-    for i=1:30000
+    for i = 1:30000
         run(model)
     end
 end
