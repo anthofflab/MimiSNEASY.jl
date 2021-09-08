@@ -62,24 +62,32 @@ function get_model(;start_year::Int=1765, end_year::Int=2500)
     # Set parameters
     # ---------------------------------------------
 
-    set_param!(m, :doeclim, :t2co, 2.0)
-    set_param!(m, :doeclim, :kappa, 1.1)
+    # shared parameters
+    add_shared_param!(m, :model_CO₂_0, 278.05158)
+    connect_param!(m, :ccm, :CO₂_0, :model_CO₂_0)
+    connect_param!(m, :rfco2, :CO₂_0, :model_CO₂_0)
 
-    set_param!(m, :ccm, :Q10, 1.311)
-    set_param!(m, :ccm, :Beta, 0.502)
-    set_param!(m, :ccm, :Eta, 17.7)
-    set_param!(m, :ccm, :atmco20, 280.)
-    set_param!(m, :ccm, :CO2_emissions, f_co2emissions)
-    set_param!(m, :ccm, :anomtable, anomtable)
+    add_shared_param!(m, :deltat, deltat)
+    connect_param!(m, :ccm, :deltat, :model_deltat)
+    connect_param!(m, :doeclim, :deltat, :model_deltat)
+    connect_param!(m, :radiativeforcing, :deltat, :model_deltat)
+
+    # unshared parameters
+    update_param!(m, :doeclim, :t2co, 2.0)
+    update_param!(m, :doeclim, :kappa, 1.1)
+
+    update_param!(m, :ccm, :Q10, 1.311)
+    update_param!(m, :ccm, :Beta, 0.502)
+    update_param!(m, :ccm, :Eta, 17.7)
+    update_param!(m, :ccm, :CO2_emissions, f_co2emissions)
+    update_param!(m, :ccm, :anomtable, anomtable)
     # TODO Find better values for the following parameter
-    set_param!(m, :rfco2, :N₂O, fill(272.95961, nsteps))
+    update_param!(m, :rfco2, :N₂O, fill(272.95961, nsteps))
 
-    set_param!(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
-    #set_param!(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
-    set_param!(m, :radiativeforcing, :rf_other, f_rfother)
-    set_param!(m, :radiativeforcing, :alpha, 1.)
-
-    set_param!(m, :deltat, deltat)
+    update_param!(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
+    #update_param!(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
+    update_param!(m, :radiativeforcing, :rf_other, f_rfother)
+    update_param!(m, :radiativeforcing, :alpha, 1.)
 
     # ---------------------------------------------
     # Connect parameters to variables

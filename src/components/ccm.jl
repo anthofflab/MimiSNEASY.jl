@@ -65,7 +65,7 @@ const npp0 = 60.0             # [GtC/yr]
     Ftp = Variable(index=[4])
     Goc = Variable(index=[4])
 
-    atmco20 = Parameter()
+    CO₂_0 = Parameter(default=278.05158)  # Initial (pre-industrial) CO₂ concentration (ppm).
 
     function init(p, v, d)
         v.tpools[TimestepIndex(1),1] = 100.0     # Non-woody vegetation [GtC]
@@ -74,7 +74,7 @@ const npp0 = 60.0             # [GtC/yr]
         v.tpools[TimestepIndex(1),4] = 1500.0    # Soil carbon [GtC]
     
     
-        v.atmco2[TimestepIndex(1)] = p.atmco20         # [ppm]
+        v.atmco2[TimestepIndex(1)] = p.CO₂_0         # [ppm]
     
         v.ocanom[TimestepIndex(1),1] = 0
         v.ocanom[TimestepIndex(1),2] = 0
