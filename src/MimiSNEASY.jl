@@ -67,7 +67,7 @@ function get_model(;start_year::Int=1765, end_year::Int=2500)
     connect_param!(m, :ccm, :CO₂_0, :model_CO₂_0)
     connect_param!(m, :rfco2, :CO₂_0, :model_CO₂_0)
 
-    add_shared_param!(m, :deltat, deltat)
+    add_shared_param!(m, :model_deltat, deltat)
     connect_param!(m, :ccm, :deltat, :model_deltat)
     connect_param!(m, :doeclim, :deltat, :model_deltat)
     connect_param!(m, :radiativeforcing, :deltat, :model_deltat)
