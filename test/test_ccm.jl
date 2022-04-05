@@ -14,7 +14,7 @@ anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
 
 #Create a temperature forcing file with the appropriate length
 srand(123);
-temp_forcing = Float64[0.8 * (1+0.0025)^t + rand(Normal(0., 0.2), 1)[1] for t = 1:length(co2_forcing)];
+temp_forcing = Float64[0.8 * (1 + 0.0025)^t + rand(Normal(0.0, 0.2), 1)[1] for t = 1:length(co2_forcing)];
 
 deltat = 1.0
 
@@ -25,7 +25,7 @@ function mimiccm(Q10, Beta, Eta, atmco20, temp_forcing, co2_forcing)
 
     setindex(m, :time, length(co2_forcing))
 
- 	addcomponent(m, ccmcomponent.ccm, :ccm)
+    addcomponent(m, ccmcomponent.ccm, :ccm)
 
     setparameter(m, :ccm, :deltat, deltat)
     setparameter(m, :ccm, :Q10, Q10)
@@ -55,15 +55,15 @@ end
 #	Note: Climate Sensitivity parameter for run_fortran_ccm does not affect results (and is not included in mimi version)
 
 #Run Mimi Verseion of ccm
-m_atmco2 = mimiccm(1., 1.311, 0.502, 280., temp_forcing, co2_forcing);
+m_atmco2 = mimiccm(1.0, 1.311, 0.502, 280.0, temp_forcing, co2_forcing);
 
 #Run fortran version of ccm
 init_fortran_ccm()
-f_atmco2 = run_fortran_ccm(2., 1., 1.311, 0.502, 280., temp_forcing, co2_forcing);
+f_atmco2 = run_fortran_ccm(2.0, 1.0, 1.311, 0.502, 280.0, temp_forcing, co2_forcing);
 fin_fortran_ccm()
 
 
 #Test Precision
 Precision = 1.0e-12
 
-@test_approx_eq_eps maxabs(m_atmco2 .- f_atmco2) 0. Precision
+@test_approx_eq_eps maxabs(m_atmco2 .- f_atmco2) 0.0 Precision

@@ -6,10 +6,10 @@ include("../../sneasy/julia/sneasy.jl")
 #DATA
 #Note: f_nonco2forcing can be passed into mimisneasy, but the fortran version requires the forcing inputs to be split up.
 df = readtable("../../sneasy/data/RCP85_EMISSIONS.csv");
-f_co2emissions = convert(Array, (df[:FossilCO2]+df[:OtherCO2]));
-f_nonco2forcing = readtable("../../sneasy/data/forcing_rcp85.txt", separator = ' ', header=true);
-f_aerosols=convert(Array, (f_nonco2forcing[:aerosol_direct]+f_nonco2forcing[:aerosol_indirect]));
-f_other = convert(Array, (f_nonco2forcing[:ghg_nonco2]+f_nonco2forcing[:solar]+f_nonco2forcing[:volcanic]+f_nonco2forcing[:other]));
+f_co2emissions = convert(Array, (df[:FossilCO2] + df[:OtherCO2]));
+f_nonco2forcing = readtable("../../sneasy/data/forcing_rcp85.txt", separator=' ', header=true);
+f_aerosols = convert(Array, (f_nonco2forcing[:aerosol_direct] + f_nonco2forcing[:aerosol_indirect]));
+f_other = convert(Array, (f_nonco2forcing[:ghg_nonco2] + f_nonco2forcing[:solar] + f_nonco2forcing[:volcanic] + f_nonco2forcing[:other]));
 
 
 
@@ -22,7 +22,7 @@ function mimisneasy(f_co2emissions, f_nonco2forcing, t2co, kappa, alpha, Q10, Be
     addcomponent(m, doeclimcomponent.doeclim, :doeclim)
     addcomponent(m, ccmcomponent.ccm, :ccm)
 
-    f_anomtable = readdlm("../../sneasy/sneasy/anomtable.txt");
+    f_anomtable = readdlm("../../sneasy/sneasy/anomtable.txt")
 
     # Timesteps
     deltat = 1.0
@@ -36,7 +36,7 @@ function mimisneasy(f_co2emissions, f_nonco2forcing, t2co, kappa, alpha, Q10, Be
     setparameter(m, :ccm, :Q10, Q10)
     setparameter(m, :ccm, :Beta, Beta)
     setparameter(m, :ccm, :Eta, Eta)
-    setparameter(m, :ccm, :atmco20, 280.) #Set to 280 in run_fortran_sneasy
+    setparameter(m, :ccm, :atmco20, 280.0) #Set to 280 in run_fortran_sneasy
     setparameter(m, :ccm, :CO2_emissions, f_co2emissions)
     setparameter(m, :ccm, :anomtable, transpose(f_anomtable))
 
@@ -67,19 +67,18 @@ end
 #
 #format for run_fortran_sneasy = run_fortran_sneasy(co2_emissions_forcing, aerosol_forcing, other_forcing, t2co, kappa, alpha, Q10, Beta, Eta)
 
-m_MOC, m_radforc, m_atmco2, m_atmocflux, m_surfacetemp, m_heatinterior = mimisneasy(f_co2emissions, f_nonco2forcing, 2.0, 1.1, 1., 1.311, 0.502, 17.7);
+m_MOC, m_radforc, m_atmco2, m_atmocflux, m_surfacetemp, m_heatinterior = mimisneasy(f_co2emissions, f_nonco2forcing, 2.0, 1.1, 1.0, 1.311, 0.502, 17.7);
 
 #Note, last parameter (0.047) in run_fortran_sneasy is for the MOC and does not influence results being compared.
 init_fortran_sneasy()
-f_MOC, f_radforc, f_atmco2, f_atmocflux, f_surfacetemp, f_heatinterior = run_fortran_sneasy(f_co2emissions, f_aerosols, f_other, 2.0, 1.1, 1., 1.311, 0.502, 17.7, 0.047);
+f_MOC, f_radforc, f_atmco2, f_atmocflux, f_surfacetemp, f_heatinterior = run_fortran_sneasy(f_co2emissions, f_aerosols, f_other, 2.0, 1.1, 1.0, 1.311, 0.502, 17.7, 0.047);
 fin_fortran_sneasy()
 
 #Test Precision
 Precision = 1.0e-3
 
-@test_approx_eq_eps maxabs(m_radforc .- f_radforc) 0. Precision
-@test_approx_eq_eps maxabs(m_atmco2 .- f_atmco2) 0. Precision
-@test_approx_eq_eps maxabs(m_atmocflux .- f_atmocflux) 0. Precision
-@test_approx_eq_eps maxabs(m_surfacetemp .- f_surfacetemp) 0. Precision
-@test_approx_eq_eps maxabs(m_heatinterior .- f_heatinterior) 0. Precision
-
+@test_approx_eq_eps maxabs(m_radforc .- f_radforc) 0.0 Precision
+@test_approx_eq_eps maxabs(m_atmco2 .- f_atmco2) 0.0 Precision
+@test_approx_eq_eps maxabs(m_atmocflux .- f_atmocflux) 0.0 Precision
+@test_approx_eq_eps maxabs(m_surfacetemp .- f_surfacetemp) 0.0 Precision
+@test_approx_eq_eps maxabs(m_heatinterior .- f_heatinterior) 0.0 Precision
