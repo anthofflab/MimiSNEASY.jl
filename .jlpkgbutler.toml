@@ -1,3 +1,2 @@
 template = "bach"
-custom-registry = "mimiframework/MimiRegistry"
 strategy-matrix-exclude = "os: ubuntu-latest, julia-arch: x86"
