@@ -6,7 +6,7 @@ include("../../sneasy/julia/sneasy.jl")
 include("../src/doeclim.jl")
 
 df = readtable("../../sneasy/data/forcing_rcp85.txt", separator=' ');
-df = DataFrame(year=df[:year], rf=df[:co2]+df[:aerosol_direct]+df[:aerosol_indirect]+df[:ghg_nonco2]+df[:solar]+df[:volcanic]+df[:other]);
+df = DataFrame(year=df[:year], rf=df[:co2] + df[:aerosol_direct] + df[:aerosol_indirect] + df[:ghg_nonco2] + df[:solar] + df[:volcanic] + df[:other]);
 total_forcing = convert(Array, df[:rf]);
 
 deltat = 1.0
@@ -20,7 +20,7 @@ function mimidoeclim(t2co, kappa, forcing)
 
     addcomponent(m, doeclimcomponent.doeclim, :doeclim)
 
-	setparameter(m, :doeclim, :t2co, t2co)
+    setparameter(m, :doeclim, :t2co, t2co)
     setparameter(m, :doeclim, :kappa, kappa)
     setparameter(m, :doeclim, :deltat, deltat)
     setparameter(m, :doeclim, :forcing, forcing)
@@ -52,6 +52,6 @@ f_temp, f_heatflux_mixed, f_heatflux_interior = run_fortran_doeclim(2.0, 1.1, to
 #Test Precision
 Precision = 1.0e-6
 
-@test_approx_eq_eps maxabs(m_temp .- f_temp) 0. Precision
-@test_approx_eq_eps maxabs(m_heatflux_mixed .- f_heatflux_mixed) 0. Precision
-@test_approx_eq_eps maxabs(m_heatflux_interior .- f_heatflux_interior) 0. Precision
+@test_approx_eq_eps maxabs(m_temp .- f_temp) 0.0 Precision
+@test_approx_eq_eps maxabs(m_heatflux_mixed .- f_heatflux_mixed) 0.0 Precision
+@test_approx_eq_eps maxabs(m_heatflux_interior .- f_heatflux_interior) 0.0 Precision
