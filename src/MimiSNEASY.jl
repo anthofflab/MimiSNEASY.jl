@@ -12,7 +12,7 @@ include("components/ccm.jl")
 include("components/radiativeforcing.jl")
 include("components/rfco2.jl")
 
-function get_model(;start_year::Int=1765, end_year::Int=2500)
+function get_model(; start_year::Int=1765, end_year::Int=2500)
     m = Model()
 
     set_dimension!(m, :time, start_year:end_year)
@@ -36,18 +36,18 @@ function get_model(;start_year::Int=1765, end_year::Int=2500)
 
     # Read in RCP scenario and other data needed to run SNEASY.
     df = load(joinpath(@__DIR__, "..", "calibration", "data", "RCP85_EMISSIONS.csv")) |> DataFrame
-    rf_data = load(File{format"CSV"}(joinpath(@__DIR__, "..", "calibration", "data", "forcing_rcp85.txt")), spacedelim=true) |> 
-        @rename(3=>:ghg_nonco2, 4=>:aerosol_direct, 5=>:aerosol_indirect) |>
-        DataFrame
-    f_anomtable = readdlm(joinpath(@__DIR__, "..", "data", "anomtable.txt"));
+    rf_data = load(File{format"CSV"}(joinpath(@__DIR__, "..", "calibration", "data", "forcing_rcp85.txt")), spacedelim=true) |>
+              @rename(3 => :ghg_nonco2, 4 => :aerosol_direct, 5 => :aerosol_indirect) |>
+              DataFrame
+    f_anomtable = readdlm(joinpath(@__DIR__, "..", "data", "anomtable.txt"))
 
     # Get RCP year indices based on user-specified time horizon to run model.
     start_index, end_index = findall((in)([start_year, end_year]), collect(1765:2500))
 
     # Clean up model data.
-    rename!(df, :YEARS => :year);
+    rename!(df, :YEARS => :year)
     df = outerjoin(df, rf_data, on=:year)
-    df = DataFrame(year=df.year, co2=df.FossilCO2+df.OtherCO2, rf_aerosol=df.aerosol_direct+df.aerosol_indirect, rf_other=df.ghg_nonco2+df.volcanic+df.solar+df.other);
+    df = DataFrame(year=df.year, co2=df.FossilCO2 + df.OtherCO2, rf_aerosol=df.aerosol_direct + df.aerosol_indirect, rf_other=df.ghg_nonco2 + df.volcanic + df.solar + df.other)
 
     # Get specific input variables indexed to user-specified model time horizon.
     f_co2emissions = convert(Array, df.co2)[start_index:end_index]
@@ -87,7 +87,7 @@ function get_model(;start_year::Int=1765, end_year::Int=2500)
     update_param!(m, :radiativeforcing, :rf_aerosol, f_rfaerosol)
     #update_param!(m, :radiativeforcing, :rf_ch4, zeros(nsteps))
     update_param!(m, :radiativeforcing, :rf_other, f_rfother)
-    update_param!(m, :radiativeforcing, :alpha, 1.)
+    update_param!(m, :radiativeforcing, :alpha, 1.0)
 
     # ---------------------------------------------
     # Connect parameters to variables

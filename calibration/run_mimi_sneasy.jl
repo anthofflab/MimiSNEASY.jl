@@ -4,28 +4,28 @@ function construct_run_mimi_sneasy()
     m = MimiSNEASY.get_model(nsteps=246)
 
     function run_mimi_sneasy!(
-	       MOC_strength::Vector{Float64},
-           radiative_forc::Vector{Float64},
-           ATM_CO2::Vector{Float64},
-           atm_oc_flux::Vector{Float64},
-           GL_surface_temp::Vector{Float64},
-           GL_ocean_heat::Vector{Float64},
-           co2_emissions::Vector{Float64},
-           rf_aerosol::Vector{Float64},
-           rf_nonco2::Vector{Float64},
-           S::Float64,
-           kappa::Float64,
-           alpha::Float64,
-           Q10::Float64,
-           beta::Float64,
-           eta::Float64,
-           hydsens::Float64,
-           init_CO2::Float64=280.,
-           init_MOC::Float64=20.)
+        MOC_strength::Vector{Float64},
+        radiative_forc::Vector{Float64},
+        ATM_CO2::Vector{Float64},
+        atm_oc_flux::Vector{Float64},
+        GL_surface_temp::Vector{Float64},
+        GL_ocean_heat::Vector{Float64},
+        co2_emissions::Vector{Float64},
+        rf_aerosol::Vector{Float64},
+        rf_nonco2::Vector{Float64},
+        S::Float64,
+        kappa::Float64,
+        alpha::Float64,
+        Q10::Float64,
+        beta::Float64,
+        eta::Float64,
+        hydsens::Float64,
+        init_CO2::Float64=280.0,
+        init_MOC::Float64=20.0)
 
         n = length(co2_emissions)
 
-        if length(rf_aerosol)!=n || length(rf_nonco2)!=n
+        if length(rf_aerosol) != n || length(rf_nonco2) != n
             error("All input vectors must have the same length")
         end
 
