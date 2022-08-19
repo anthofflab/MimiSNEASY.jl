@@ -36,7 +36,7 @@ function get_model(;start_year::Int=1765, end_year::Int=2500)
 
     # Read in RCP scenario and other data needed to run SNEASY.
     df = load(joinpath(@__DIR__, "..", "calibration", "data", "RCP85_EMISSIONS.csv")) |> DataFrame
-    rf_data = load(File(format"CSV", joinpath(@__DIR__, "..", "calibration", "data", "forcing_rcp85.txt")), spacedelim=true) |> 
+    rf_data = load(File{format"CSV"}(joinpath(@__DIR__, "..", "calibration", "data", "forcing_rcp85.txt")), spacedelim=true) |> 
         @rename(3=>:ghg_nonco2, 4=>:aerosol_direct, 5=>:aerosol_indirect) |>
         DataFrame
     f_anomtable = readdlm(joinpath(@__DIR__, "..", "data", "anomtable.txt"));
