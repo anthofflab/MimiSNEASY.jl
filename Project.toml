@@ -1,6 +1,6 @@
 name = "MimiSNEASY"
 uuid = "3f1801d0-c5f8-11e9-1568-bf13fd643260"
-version = "1.0.3-DEV"
+version = "1.1.0-DEV"
 
 [deps]
 CSVFiles = "5d742f6a-9f54-50ce-8119-2520741973ca"
